@@ -1,0 +1,53 @@
+{
+	"compilerOptions": {
+		"target": "ES2017",
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"noEmit": true,
+		"esModuleInterop": true,
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "preserve",
+		"incremental": true,
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		"paths": {
+			"@/*": ["./*"]
+		}
+	},
+	"include": [
+		"next-env.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		".next/types/**/*.ts",
+		"app/components/ContactCard.jsx",
+		"app/components/UpcomingEvents.jsx",
+		"app/components/Newsletter.jsx",
+		"app/gurungknsadmin1234/subscribers/SubscribersList.jsx",
+		"app/gurungknsadmin1234/events/page.jsx",
+		"app/gurungknsadmin1234/artists/page.jsx",
+		"app/gurungknsadmin1234/testimonials/page.jsx",
+		"app/components/Testimonials.jsx",
+		"app/components/FeaturedArtists.jsx",
+		"app/gurungknsadmin1234/settings/page.jsx",
+		"app/(auth)/user/page.jsx",
+		"app/api/webhook/route.js",
+		"app/gurungknsadmin1234/layout.jsx",
+		"app/gurungknsadmin1234/subscribers/page.jsx",
+		"components/Footer.jsx",
+		"app/request-a-quote/page.jsx",
+		"components/Hero.jsx",
+		"components/SearchModal.jsx",
+		"components/SearchBox.jsx",
+		"app/contact/page.tsx",
+		"components/DisplayPrices.jsx"
+	],
+	"exclude": ["node_modules"]
+}
