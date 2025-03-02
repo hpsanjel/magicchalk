@@ -69,10 +69,10 @@ export async function PUT(request, { params }) {
 }
 
 // Helper to delete Cloudinary files
-async function deleteFromCloudinary(url) {
-	const publicId = url.split("/").pop().split(".")[0];
-	await cloudinary.uploader.destroy(`magic_chalk_event_images/${publicId}`);
-}
+// async function deleteFromCloudinary(url) {
+// 	const publicId = url.split("/").pop().split(".")[0];
+// 	await cloudinary.uploader.destroy(`magic_chalk_event_images/${publicId}`);
+// }
 
 // DELETE API to delete event
 export async function DELETE(request, { params }) {

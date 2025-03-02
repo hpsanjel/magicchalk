@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,7 +75,7 @@ export default function ContactPage() {
 					<h1 className="text-3xl text-center font-bold mb-6">
 						Contact <span className="text-red-500">Us</span>
 					</h1>
-					<p className="text-muted-foreground  md:text-lg ">Have questions? We would love to hear from you. Whether you're curious about our programs, enrollment process, or facilities, we're here to help. Send us a message, and our team will get back to you as soon as possible! 😊</p>
+					<p className="text-muted-foreground  md:text-lg ">Have questions? We would love to hear from you. Whether you are curious about our programs, enrollment process, or facilities, we are here to help. Send us a message, and our team will get back to you as soon as possible! 😊</p>
 				</div>
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 					<Form {...form}>

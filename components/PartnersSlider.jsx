@@ -1,10 +1,9 @@
-import useFetchData from "@/hooks/useFetchData";
-import Image from "next/image";
 import React from "react";
 import { Card, CardContent } from "./ui/card";
+import useFetchData from "@/hooks/useFetchData";
 
 const PartnersSlider = () => {
-	const { data: partners, error, loading } = useFetchData("/api/partners", "partners");
+	const { loading } = useFetchData("/api/partners", "partners");
 
 	if (loading) {
 		return (
@@ -31,7 +30,7 @@ const PartnersSlider = () => {
 			</section>
 		);
 	}
-	if (error) return <p className="text-center py-12 text-red-500">Error: {error}</p>;
+	// if (error) return <p className="text-center py-12 text-red-500">Error: {error}</p>;
 
 	return (
 		<section className=" py-16 px-4 sm:py-24">

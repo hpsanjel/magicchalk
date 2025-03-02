@@ -53,6 +53,6 @@ export async function POST(req) {
 
 		return response;
 	} catch (error) {
-		return NextResponse.json({ error: "Failed to log in user." }, { status: 500 });
+		return NextResponse.json({ error: "Failed to log in user." + error }, { status: 500 });
 	}
 }

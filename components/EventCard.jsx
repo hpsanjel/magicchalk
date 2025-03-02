@@ -1,6 +1,6 @@
 import React from "react";
 
-const EventCard = ({ date, title, image }) => {
+const EventCard = ({ date, title }) => {
 	// Parse the date
 	const eventDate = new Date(date);
 	const formattedDay = eventDate.getDate();

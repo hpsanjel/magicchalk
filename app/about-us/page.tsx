@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, Film, Mic, Sparkles, Play, Book, Palette, Bed, School } from "lucide-react";
+import { Music, Play, Book, Palette, Bed, School } from "lucide-react";
 import Link from "next/link";
 
 export default function AboutUs() {

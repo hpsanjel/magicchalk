@@ -1,15 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
-import { Calendar, Clock, Globe, MapPin } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import Link from "next/link";
-import { BuyTicketButton } from "./BuyTicketButton";
-import ShareEvent from "./ShareEvent";
 import useFetchData from "@/hooks/useFetchData";
 import KindergartenEventsGrid from "@/components/EventCard";
-// import DisplayPrices from "@/components/DisplayPrices";
 
 export default function UpcomingEvents() {
 	const { data: events, error, loading } = useFetchData("/api/events", "events");
