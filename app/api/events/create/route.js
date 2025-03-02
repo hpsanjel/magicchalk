@@ -49,10 +49,10 @@ export async function POST(request) {
 		const formattedDate = new Date(eventdate).toISOString().split("T")[0];
 
 		// Upload images to Cloudinary
-		const eventposterUrl = await uploadToCloudinary(eventposter, "event_images");
-		const eventposter2Url = eventposter2 ? await uploadToCloudinary(eventposter2, "event_images") : null;
-		const eventposter3Url = eventposter3 ? await uploadToCloudinary(eventposter3, "event_images") : null;
-		const eventvideoUrl = eventvideo ? await uploadToCloudinary(eventvideo, "event_images") : null;
+		const eventposterUrl = await uploadToCloudinary(eventposter, "magic_chalk_event_images");
+		const eventposter2Url = eventposter2 ? await uploadToCloudinary(eventposter2, "magic_chalk_event_images") : null;
+		const eventposter3Url = eventposter3 ? await uploadToCloudinary(eventposter3, "magic_chalk_event_images") : null;
+		const eventvideoUrl = eventvideo ? await uploadToCloudinary(eventvideo, "magic_chalk_event_images") : null;
 
 		// Save event to MongoDB
 		console.log("Creating event in database");

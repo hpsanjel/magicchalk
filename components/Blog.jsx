@@ -52,55 +52,38 @@ export default function Blog() {
 		<section id="blog" className="">
 			<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
 				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
-					Our <span className="text-red-500">Blogs</span>
+					<span className="text-red-500">Blogs</span>
 				</h2>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					{" "}
-					{/* Featured Article */}
-					<div className="flex flex-col justify-between mb-6 md:mb-0 h-96 sm:h-[400px] md:h-[745px] lg:h-[385px]">
-						{" "}
-						<h3 className="text-2xl font-bold mb-2">Featured</h3>
-						<div className="group relative flex-1 overflow-hidden rounded-lg shadow-md transition-transform duration-300 hover:shadow-lg">
-							<Image src={blogs[0]?.blogMainPicture || "/placeholder.jpg"} alt={blogs[0]?.blogTitle || "alt"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover h-full w-full transition-transform duration-300 group-hover:scale-105" />
-							<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
-								<div className="absolute bottom-0 p-4 text-slate-200">
-									<h1 className="text-xl md:text-2xl font-bold mb-2 cursor-pointer group-hover:text-red-300">
-										<Link href={`/blogs/${blogs[0]?._id}`}>{blogs[0]?.blogTitle}</Link>
-									</h1>{" "}
-									<div className="flex items-center text-gray-300">
-										<Calendar className="w-4 h-4 mr-2" />
-										<span className="text-sm">{blogs[0]?.blogDate}</span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					{/* Recent Blogs */}
-					<div className="flex flex-col">
-						<h3 className="text-2xl font-bold mb-2">Recent</h3>
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+				<div className="mx-auto px-4 py-12">
+					<div className="space-y-8">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 							{blogs &&
-								blogs.slice(1, 7).map((blog) => (
-									<div key={blog._id} className="group bg-white rounded-lg shadow overflow-hidden transition-all duration-300 hover:shadow-md">
-										<div className="flex items-center p-3">
-											<div className="relative w-20 h-20 flex-shrink-0">
-												<Image src={blog?.blogMainPicture || "/placeholder.jpg"} alt={blog?.blogTitle || "alt"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover rounded" />
+								blogs.map((blog) => (
+									<div key={blog._id} className="group bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px]">
+										<div className="relative w-full h-64 overflow-hidden">
+											<Image src={blog?.blogMainPicture || "/placeholder.jpg"} alt={blog?.blogTitle || "Blog image"} width={500} height={500} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" />
+										</div>
+										<div className="p-6 space-y-2">
+											<div className="flex items-center text-gray-500">
+												<Calendar className="w-4 h-4 mr-2" />
+												<span className="text-sm font-medium">{blog?.blogDate}</span>
 											</div>
-											<div className="ml-4 flex-1">
-												<h2 className="text-md font-semibold text-gray-800 line-clamp-2 cursor-pointer group-hover:text-red-700 transition-colors duration-100 ease-in">{blog.blogTitle}</h2>
-												<div className="flex items-center text-gray-500 mt-1">
-													<Calendar className="w-3 h-3 mr-1" />
-													<span className="text-xs">{blog?.blogDate}</span>
-												</div>
+											<h2 className="text-xl font-bold text-gray-800 line-clamp-2 group-hover:text-red-600 transition-colors duration-200">{blog.blogTitle}</h2>
+											<p className="text-gray-600 text-sm line-clamp-3">{blog.blogDescription || "Read this article to learn more about this topic."}</p>
+											<div className="pt-4">
+												<span className="inline-flex text-red-600 font-semibold text-sm group-hover:underline">Read more</span>
 											</div>
 										</div>
 									</div>
 								))}
 						</div>
-						<div className="mt-4 flex justify-end">
-							<Link href="/blogs" className="w-max underline">
+						<div className="flex justify-center md:justify-end">
+							<Link href="/blogs" className="inline-flex items-center px-5 py-2.5 font-medium text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors duration-200">
 								View All Blogs
+								<svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+									<path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+								</svg>
 							</Link>
 						</div>
 					</div>
@@ -108,39 +91,4 @@ export default function Blog() {
 			</div>
 		</section>
 	);
-}
-
-// const advertisements = [
-// 	{
-// 		id: 1,
-// 		image: "/event2.png",
-// 		alt: "Advertisement 1",
-// 		title: "Concert craze is increasing",
-// 	},
-// 	{
-// 		id: 2,
-// 		image: "/event3.png",
-// 		alt: "Advertisement 2",
-// 		title: "Standup Comedy has gained popularity",
-// 	},
-// ];
-
-{
-	/* Advertisements - Right Column */
-}
-{
-	/* <div>
-						<h3 className="text-2xl font-bold mb-2">Most Popular</h3>
-						<div className="space-y-4">
-							{advertisements.map((ad) => (
-								<div key={ad.id} className="relative w-full h-56 aspect-[3/2] rounded-lg overflow-hidden shadow-md">
-									<Image src={ad.image || "/placeholder.jpg"} alt={ad.alt || "alt"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover" />
-									<p className="absolute bottom-4 bg-black bg-opacity-50 text-white hover:text-red-200 text-lg md:text-xl px-6 hover:scale-105 cursor-pointer transition-all ease-in-out duration-100">{ad.title}</p>
-								</div>
-							))}
-							<Button variant="outline" href="/news" className="w-full text-center">
-								View More Popular Blogs
-							</Button>
-						</div>
-					</div> */
 }

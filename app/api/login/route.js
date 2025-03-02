@@ -12,7 +12,6 @@ export async function POST(req) {
 	await connectDB();
 
 	try {
-		console.log(JWT_SECRET, COOKIE_NAME);
 		const data = await req.json();
 		const { email, password } = data;
 
@@ -54,7 +53,6 @@ export async function POST(req) {
 
 		return response;
 	} catch (error) {
-		console.error("Error logging in user:", error);
 		return NextResponse.json({ error: "Failed to log in user." }, { status: 500 });
 	}
 }

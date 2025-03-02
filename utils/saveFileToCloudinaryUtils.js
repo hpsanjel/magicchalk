@@ -36,27 +36,3 @@ export async function uploadToCloudinary(file, folder = "default_folder") {
 		}
 	});
 }
-
-// export async function uploadToCloudinary(file, folder = "default_folder") {
-// 	return new Promise(async (resolve, reject) => {
-// 		try {
-// 			const buffer = Buffer.from(await file.arrayBuffer());
-// 			const stream = cloudinary.v2.uploader.upload_stream(
-// 				{
-// 					resource_type: "image",
-// 					folder,
-// 				},
-// 				(error, result) => {
-// 					if (error) {
-// 						reject(error);
-// 					} else {
-// 						resolve(result.secure_url);
-// 					}
-// 				}
-// 			);
-// 			Readable.from(buffer).pipe(stream);
-// 		} catch (error) {
-// 			reject(error);
-// 		}
-// 	});
-// }

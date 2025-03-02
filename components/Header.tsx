@@ -1,13 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Facebook, Home, Instagram, Menu, Search, ShoppingCart, X } from "lucide-react";
+import { Facebook, Instagram, Menu, Search, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import SearchModal from "@/components/SearchModal";
 import { usePathname } from "next/navigation";
-
-// import SearchBox from "@/components/SearchBox";
 
 interface HeaderProps {
 	isMenuOpen: boolean;
@@ -31,61 +29,43 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 	}, []);
 
 	return (
-		<motion.header className={`fixed w-full z-50 transition-colors duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-black"}`} initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}>
+		<motion.header className={`fixed w-full z-50 transition-colors duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-[#97BF06]"}`} initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}>
 			<div className="container mx-auto p-4 flex justify-between items-center">
 				<Link href="/" className="flex items-center space-x-4 cursor-pointer group">
-					<Image src="/kns_logo_rect.png" alt="KNS Entertainment" width={200} height={200} className="w-auto h-12 md:h-16 rounded-md bg-slate-200 group-hover:bg-slate-100" />
-					{/* <span className={`text-2xl font-bold text-primary ${isScrolled ? "text-black " : "text-slate-200"}`}>KNS Entertainment</span> */}
+					<Image src="/magicchalklogo.png" alt="KNS Entertainment" width={200} height={200} className="w-auto h-12 md:h-16 rounded-md bg-slate-900 group-hover:bg-slate-100" />
 				</Link>
 
 				<div className="flex gap-6 items-center">
 					<nav className="hidden md:flex items-center space-x-6">
-						<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"} ${pathname === "/" ? "border-b-2 border-red-700" : ""}`}>
-							<Home />
-						</Link>
-						<Link href="/europe-tour" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"} ${pathname === "/gallery" ? "border-b-2 border-red-700" : ""}`}>
-							Europe Tour{" "}
-						</Link>
-						<Link href="/blogs" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"} ${pathname === "/blogs" ? "border-b-2 border-red-700" : ""}`}>
+						<Link href="/blogs" className={` border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-800"} ${pathname === "/blogs" ? "border-b-2 border-red-700" : ""}`}>
 							Blog
 						</Link>
-						<Link href="/about-us" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"} ${pathname === "/about-us" ? "border-b-2 border-red-700" : ""}`}>
+						<Link href="/about-us" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-800"} ${pathname === "/about-us" ? "border-b-2 border-red-700" : ""}`}>
 							About Us
 						</Link>
-						<Link href="/contact" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"} ${pathname === "/contact" ? "border-b-2 border-red-700" : ""}`}>
+						<Link href="/contact" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-800"} ${pathname === "/contact" ? "border-b-2 border-red-700" : ""}`}>
 							Contact Us
 						</Link>
-						{/* <Link href="/gurungknsadmin1234" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"} ${pathname === "/gurungknsadmin1234" ? "border-b-2 border-red-700" : ""}`}>
-							Dashboard
-						</Link> */}
-
-						{isModalOpen && <SearchModal closeModal={closeModal} />}
-						{/* <Link href="request-a-quote" className={`border-b bg-red-700 rounded-full py-2 px-6 border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-white" : "text-slate-200 hover:text-slate-200"}`}>
-							Europe Tour
-						</Link> */}
-						<button onClick={openModal} className=" border-b border-transparent hover:border-b hover:scale-110">
-							<span className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"}`}>
-								<Search />
-							</span>
-						</button>
 					</nav>
 				</div>
 
 				<div className="flex gap-4 md:gap-6 items-center">
-					<Link href="https://www.facebook.com/profile.php?id=100063661892252" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"}`}>
+					{isModalOpen && <SearchModal closeModal={closeModal} />}
+
+					<button onClick={openModal} className=" border-b border-transparent hover:border-b hover:scale-110">
+						<span className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
+							<Search />
+						</span>
+					</button>
+					<Link href="https://www.facebook.com/profile.php?id=100063661892252" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
 						<Facebook />
 					</Link>
-					<Link href="https://www.instagram.com/gurungknsentertainment/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"}`}>
+					<Link href="https://www.instagram.com/gurungknsentertainment/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
 						<Instagram />
 					</Link>
-					<div className="relative p-1">
-						<ShoppingCart className={`h-6 w-6 transition-colors ${isScrolled ? "text-black" : "text-slate-200"}`} />
-						<span className="absolute top-1 right-0 bg-red-600 text-white text-xs font-semibold rounded-full h-4 w-4 flex items-center justify-center transform translate-x-1/2 -translate-y-1/2">0</span>
-						<span className={`absolute bottom-0 -right-12 text-lg font-semibold ${isScrolled ? "text-black" : "text-slate-200"}`}>€0.0</span>
-					</div>
 
 					<div className="md:hidden cursor-pointer ml-10" onClick={toggleMenu}>
-						{isMenuOpen ? <X className={`${isScrolled ? "text-black " : "text-slate-200"}`} style={{ height: "32px", width: "32px" }} /> : <Menu className={`${isScrolled ? "text-black " : "text-slate-200"}`} style={{ height: "32px", width: "32px" }} />}
+						{isMenuOpen ? <X className={`${isScrolled ? "text-black " : "text-slate-700"}`} style={{ height: "32px", width: "32px" }} /> : <Menu className={`${isScrolled ? "text-black " : "text-slate-700"}`} style={{ height: "32px", width: "32px" }} />}
 					</div>
 				</div>
 			</div>
@@ -114,15 +94,13 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 								<p>Call: 45656546</p>
 							</div>
 							<div className="flex mt-12 gap-4">
-								<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"}`}>
+								<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
 									<Facebook />
 								</Link>
-								<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-200 hover:text-slate-200"}`}>
+								<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
 									<Instagram />
 								</Link>
 							</div>
-
-							{/* <SearchBox handleSearch={undefined} /> */}
 						</nav>
 					</div>
 				</motion.div>

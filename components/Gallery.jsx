@@ -67,10 +67,9 @@ export default function Gallery() {
 		<section id="gallery" className="py-12 sm:py-16 bg-gray-100">
 			<div className="container mx-auto px-2 sm:px-4">
 				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
-					Project <span className="text-red-500">Gallery</span>
+					<span className="text-red-500">Gallery</span>
 				</h2>
-
-				{/* Filter Buttons */}
+				;{/* Filter Buttons */}
 				<div className="flex flex-wrap justify-center gap-4 mb-8">
 					{filters.map((filter) => (
 						<button key={filter} onClick={() => scrollToSection(filter)} className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300 ${activeFilter === filter ? "bg-red-700 text-slate-200" : "bg-white text-slate-800 hover:bg-red-100"}`}>
@@ -78,7 +77,6 @@ export default function Gallery() {
 						</button>
 					))}
 				</div>
-
 				{/* Gallery Grid */}
 				<div ref={galleryRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 					{filteredItems.length > 0 ? (
@@ -98,7 +96,6 @@ export default function Gallery() {
 						<span className="text-blue-900 text-center">Currently, this section has no gallery items.</span>
 					)}
 				</div>
-
 				{/* Zoomed Image */}
 				{zoomedItem && (
 					<div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">

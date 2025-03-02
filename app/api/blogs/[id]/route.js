@@ -118,20 +118,20 @@ export async function DELETE(request, { params }) {
 		}
 
 		// Delete the main picture from Cloudinary
-		if (deletedblog.blogMainPicture) {
-			const mainPictureId = extractPublicId(deletedblog.blogMainPicture);
-			if (mainPictureId) {
-				await cloudinary.v2.uploader.destroy(mainPictureId);
-			}
-		}
+		// if (deletedblog.blogMainPicture) {
+		// 	const mainPictureId = extractPublicId(deletedblog.blogMainPicture);
+		// 	if (mainPictureId) {
+		// 		await cloudinary.v2.uploader.destroy(mainPictureId);
+		// 	}
+		// }
 
 		// Delete the second picture from Cloudinary
-		if (deletedblog.blogSecondPicture) {
-			const secondPictureId = extractPublicId(deletedblog.blogSecondPicture);
-			if (secondPictureId) {
-				await cloudinary.v2.uploader.destroy(secondPictureId);
-			}
-		}
+		// if (deletedblog.blogSecondPicture) {
+		// 	const secondPictureId = extractPublicId(deletedblog.blogSecondPicture);
+		// 	if (secondPictureId) {
+		// 		await cloudinary.v2.uploader.destroy(secondPictureId);
+		// 	}
+		// }
 
 		return NextResponse.json({ success: true, message: "Blog deleted successfully" }, { status: 200 });
 	} catch (error) {

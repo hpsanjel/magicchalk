@@ -11,7 +11,7 @@ const PartnersSlider = () => {
 			<section className="py-16 px-4 sm:py-24 bg-gray-100">
 				<div className="container mx-auto max-w-7xl">
 					<h2 className="text-3xl font-bold text-center mb-12 sm:mb-16 md:text-4xl lg:text-5xl">
-						Loading <span className="text-red-500">Partners</span>...
+						Loading <span className="text-red-500">Schools</span>...
 					</h2>
 					<div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
 						{/* Skeleton Cards */}
@@ -33,18 +33,14 @@ const PartnersSlider = () => {
 	}
 	if (error) return <p className="text-center py-12 text-red-500">Error: {error}</p>;
 
-	const handlePartnerLogoClick = () => {
-		console.log("Partner logo clicked");
-	};
-
 	return (
 		<section className=" py-16 px-4 sm:py-24">
 			<div className="container mx-auto max-w-7xl">
 				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
-					Our <span className="text-red-500">Partners</span>
+					Our <span className="text-red-500">Schools</span>
 				</h2>
 				<div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
-					{partners?.map((logo) => (
+					{/* {partners?.map((logo) => (
 						<Card key={logo._id} className="group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white overflow-hidden">
 							<CardContent className="p-4 sm:p-6">
 								<a href={logo.partner_url} className="block" target="_blank" rel="noopener noreferrer">
@@ -55,7 +51,37 @@ const PartnersSlider = () => {
 								</a>
 							</CardContent>
 						</Card>
-					))}
+					))} */}
+					<Card className="group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white overflow-hidden">
+						<CardContent className="py-6">
+							<a href="ds" className="block" target="_blank" rel="noopener noreferrer">
+								<div className="  mb-4 rounded-md overflow-hidden flex items-center justify-center">
+									<img src="pre.jpeg" alt="Preschool" className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />
+								</div>
+								<h3 className="text-sm sm:text-base font-medium text-gray-900 text-center truncate">Pre-school</h3>
+							</a>
+						</CardContent>
+					</Card>
+					<Card className="group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white overflow-hidden">
+						<CardContent className="py-6">
+							<a href="ds" className="block" target="_blank" rel="noopener noreferrer">
+								<div className="  mb-4 rounded-md overflow-hidden flex items-center justify-center">
+									<img src="nur.jpeg" alt="Preschool" className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />
+								</div>
+								<h3 className="text-sm sm:text-base font-medium text-gray-900 text-center truncate">Nursery</h3>
+							</a>
+						</CardContent>
+					</Card>
+					<Card className="group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white overflow-hidden">
+						<CardContent className="py-6">
+							<a href="ds" className="block" target="_blank" rel="noopener noreferrer">
+								<div className=" mb-4 rounded-md overflow-hidden flex items-center justify-center">
+									<img src="lkg.jpeg" alt="Preschool" className="object-contain transition-transform duration-300 group-hover:scale-105 w-full max-w-full max-h-full" />
+								</div>
+								<h3 className="text-sm sm:text-base font-medium text-gray-900 text-center truncate">LKG</h3>
+							</a>
+						</CardContent>
+					</Card>
 				</div>
 			</div>
 		</section>

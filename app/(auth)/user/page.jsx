@@ -89,12 +89,12 @@ export default function AuthForm() {
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-gray-100">
 			<Card className="w-full max-w-md">
-				<CardHeader className="bg-red-700 text-slate-200 rounded-t-lg">
+				<CardHeader className="bg-[#97BF06] text-slate-200 rounded-t-lg">
 					<CardTitle className="text-2xl font-bold">Login</CardTitle>
 				</CardHeader>
 				<CardContent className="mt-6">
 					<div className="mb-6 flex justify-center">
-						<Image src="/kns_logo_rect.png" alt="Auth" className="w-32 h-auto border boder-gray-300" width={100} height={100} />
+						<Image src="/magicchalklogo.png" alt="Auth" className="w-32 h-auto border boder-gray-300" width={100} height={100} />
 					</div>
 					{error && <p className="text-red-500 mb-4">{error}</p>}
 					<Tabs defaultValue="login" className="w-full">
@@ -120,7 +120,7 @@ export default function AuthForm() {
 									<Button type="button" variant="outline" onClick={handleCancel}>
 										Cancel
 									</Button>
-									<Button type="submit" className="bg-red-700 hover:bg-red-800">
+									<Button type="submit" className="bg-[#97BF06] hover:bg-red-800">
 										Login
 									</Button>
 								</div>
