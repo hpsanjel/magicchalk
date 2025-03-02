@@ -7,9 +7,6 @@ export async function middleware(req) {
 	const tokenObj = req.cookies.get("authToken");
 	const token = tokenObj?.value;
 
-	console.log("Raw token object:", tokenObj);
-	console.log("Extracted token:", token);
-
 	if (!token || typeof token !== "string") {
 		console.error("Token is missing or invalid");
 		return NextResponse.redirect(new URL("/user", req.url));
@@ -25,8 +22,6 @@ export async function middleware(req) {
 		// Verify the token
 		const secretKey = new TextEncoder().encode(JWT_SECRET);
 		const { payload } = await jwtVerify(token, secretKey);
-
-		console.log("Decoded token payload:", payload);
 
 		// Optionally, pass user info downstream
 		const response = NextResponse.next();

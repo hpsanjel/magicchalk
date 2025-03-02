@@ -26,7 +26,7 @@ export default function Hero() {
 			<section className="relative h-screen flex items-center justify-center text-center">
 				{/* Background Image */}
 				<div className="absolute inset-0">
-					<Image src="/magichero.jpeg" alt="Magic Chalk Day Care" layout="fill" objectFit="cover" className="w-full h-full" />
+					<Image src="/magichero.jpeg" alt="Magic Chalk Day Care" width={1000} height={800} className="w-full h-full" />
 				</div>
 
 				{/* Dark Overlay */}

@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent } from "./ui/card";
 import useFetchData from "@/hooks/useFetchData";
+import Image from "next/image";
 
 const PartnersSlider = () => {
 	const { loading } = useFetchData("/api/partners", "partners");
@@ -55,7 +56,7 @@ const PartnersSlider = () => {
 						<CardContent className="py-6">
 							<a href="ds" className="block" target="_blank" rel="noopener noreferrer">
 								<div className="  mb-4 rounded-md overflow-hidden flex items-center justify-center">
-									<img src="pre.jpeg" alt="Preschool" className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />
+									<Image src="/pre.jpeg" alt="Preschool" width={500} height={500} className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />{" "}
 								</div>
 								<h3 className="text-sm sm:text-base font-medium text-gray-900 text-center truncate">Pre-school</h3>
 							</a>
@@ -65,7 +66,7 @@ const PartnersSlider = () => {
 						<CardContent className="py-6">
 							<a href="ds" className="block" target="_blank" rel="noopener noreferrer">
 								<div className="  mb-4 rounded-md overflow-hidden flex items-center justify-center">
-									<img src="nur.jpeg" alt="Preschool" className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />
+									<Image src="/nur.jpeg" alt="Preschool" width={500} height={500} className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />{" "}
 								</div>
 								<h3 className="text-sm sm:text-base font-medium text-gray-900 text-center truncate">Nursery</h3>
 							</a>
@@ -75,7 +76,7 @@ const PartnersSlider = () => {
 						<CardContent className="py-6">
 							<a href="ds" className="block" target="_blank" rel="noopener noreferrer">
 								<div className=" mb-4 rounded-md overflow-hidden flex items-center justify-center">
-									<img src="lkg.jpeg" alt="Preschool" className="object-contain transition-transform duration-300 group-hover:scale-105 w-full max-w-full max-h-full" />
+									<Image src="/lkg.jpeg" alt="Preschool" width={500} height={500} className="object-contain transition-transform duration-300 group-hover:scale-105 max-w-full max-h-full" />{" "}
 								</div>
 								<h3 className="text-sm sm:text-base font-medium text-gray-900 text-center truncate">LKG</h3>
 							</a>

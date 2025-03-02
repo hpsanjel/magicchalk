@@ -59,7 +59,6 @@ export default function AuthForm() {
 			const result = await response.json();
 			console.log(result);
 			if (result.success) {
-				alert("Login successful!");
 				router.push("/gurungknsadmin1234");
 			} else {
 				setError(result.message || "Please use correct user credentials");
