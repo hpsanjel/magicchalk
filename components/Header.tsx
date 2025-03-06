@@ -29,7 +29,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 	}, []);
 
 	return (
-		<motion.header className={`fixed w-full z-50 transition-colors duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-[#97BF06]"}`} initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}>
+		<motion.header className={`fixed w-full z-50 transition-colors duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-green-700"}`} initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}>
 			<div className="container mx-auto p-4 flex justify-between items-center">
 				<Link href="/" className="flex items-center space-x-4 cursor-pointer group">
 					<Image src="/magicchalklogo.png" alt="KNS Entertainment" width={200} height={200} className="w-auto h-12 md:h-16 rounded-md bg-slate-900 group-hover:bg-slate-100" />
@@ -37,13 +37,13 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 
 				<div className="flex gap-6 items-center">
 					<nav className="hidden md:flex items-center space-x-6">
-						<Link href="/blogs" className={` border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-800"} ${pathname === "/blogs" ? "border-b-2 border-red-700" : ""}`}>
+						<Link href="/blogs" className={` border-b border-transparent hover:border-b hover:border-b-yellow-400 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"} ${pathname === "/blogs" ? "border-b-2 border-green-700" : ""}`}>
 							Blog
 						</Link>
-						<Link href="/about-us" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-800"} ${pathname === "/about-us" ? "border-b-2 border-red-700" : ""}`}>
+						<Link href="/about-us" className={`border-b border-transparent hover:border-b hover:border-b-yellow-400 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"} ${pathname === "/about-us" ? "border-b-2 border-green-700" : ""}`}>
 							About Us
 						</Link>
-						<Link href="/contact" className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-800"} ${pathname === "/contact" ? "border-b-2 border-red-700" : ""}`}>
+						<Link href="/contact" className={`border-b border-transparent hover:border-b hover:border-b-yellow-400 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"} ${pathname === "/contact" ? "border-b-2 border-green-700" : ""}`}>
 							Contact Us
 						</Link>
 					</nav>
@@ -53,19 +53,19 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 					{isModalOpen && <SearchModal closeModal={closeModal} />}
 
 					<button onClick={openModal} className=" border-b border-transparent hover:border-b hover:scale-110">
-						<span className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
+						<span className={`border-b border-transparent hover:border-b hover:border-b-red-700 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"}`}>
 							<Search />
 						</span>
 					</button>
-					<Link href="https://www.facebook.com/profile.php?id=100063661892252" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
+					<Link href="https://www.facebook.com/Magicchalk2023" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"}`}>
 						<Facebook />
 					</Link>
-					<Link href="https://www.instagram.com/gurungknsentertainment/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
+					<Link href="https://www.instagram.com/magic_chalk_edu/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"}`}>
 						<Instagram />
 					</Link>
 
 					<div className="md:hidden cursor-pointer ml-10" onClick={toggleMenu}>
-						{isMenuOpen ? <X className={`${isScrolled ? "text-black " : "text-slate-700"}`} style={{ height: "32px", width: "32px" }} /> : <Menu className={`${isScrolled ? "text-black " : "text-slate-700"}`} style={{ height: "32px", width: "32px" }} />}
+						{isMenuOpen ? <X className={`${isScrolled ? "text-black " : "text-slate-700"}`} style={{ height: "32px", width: "32px" }} /> : <Menu className={`${isScrolled ? "text-black " : "text-white"}`} style={{ height: "32px", width: "32px" }} />}
 					</div>
 				</div>
 			</div>

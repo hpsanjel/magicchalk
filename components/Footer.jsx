@@ -1,13 +1,13 @@
 "use client";
 import { Facebook, Instagram, MapPin, Mail, Phone } from "lucide-react";
-import useFetchData from "@/hooks/useFetchData";
+// import useFetchData from "@/hooks/useFetchData";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function Footer() {
-	const { data: settings, error, loading } = useFetchData("/api/settings", "settings");
+	// const { data: settings, error, loading } = useFetchData("/api/settings", "settings");
 
-	if (loading) return <p>Loading...</p>;
+	// if (loading) return <p>Loading...</p>;
 	if (error) return <p>Loading failed{error}</p>;
 
 	return (
@@ -34,18 +34,18 @@ export default function Footer() {
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
 					{/* About Column */}
 					<div className="space-y-4">
-						<h3 className="text-xl font-semibold relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-red-500">About Us</h3>
+						<h3 className="text-xl font-semibold relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-green-500">About Us</h3>
 						<p className="text-gray-300 leading-relaxed">Discover Magic Chalk Day Care and Child Education Center, where parents find the perfect blend of nurturing care and innovative learning for their toddlers.</p>
 					</div>
 
 					{/* Social Links Column */}
 					<div className="space-y-4">
-						<h3 className="text-xl font-semibold relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-red-500">Follow Us</h3>
+						<h3 className="text-xl font-semibold relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-green-500">Follow Us</h3>
 						<div className="flex space-x-3">
-							<a href={`${settings?.[0]?.facebook}`} target="_blank" className="bg-gray-800 hover:bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300">
+							<a href="https://www.facebook.com/Magicchalk2023" target="_blank" className="bg-gray-800 hover:bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300">
 								<Facebook className="h-5 w-5" />
 							</a>
-							<a href={`${settings?.[0]?.instagram}`} target="_blank" className="bg-gray-800 hover:bg-purple-600 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300">
+							<a href="https://www.instagram.com/magic_chalk_edu/" target="_blank" className="bg-gray-800 hover:bg-purple-600 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300">
 								<Instagram className="h-5 w-5" />
 							</a>
 						</div>
@@ -53,23 +53,23 @@ export default function Footer() {
 
 					{/* Contact Column */}
 					<div className="space-y-4">
-						<h3 className="text-xl font-semibold relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-red-500">Contact Details</h3>
+						<h3 className="text-xl font-semibold relative pb-2 after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-green-500">Contact Details</h3>
 						<div className="space-y-3">
 							<div className="flex items-start space-x-3">
-								<MapPin className="h-5 w-5 text-red-400 mt-1 flex-shrink-0" />
+								<MapPin className="h-5 w-5 text-green-400 mt-1 flex-shrink-0" />
 								<p className="text-gray-300">Satdobato, Lalitpur</p>
 							</div>
 
 							<div className="flex items-center space-x-3">
-								<Mail className="h-5 w-5 text-red-400 flex-shrink-0" />
-								<a href="mailto:magicchalk.edu@gmail.com" className="text-gray-300 hover:text-red-400 transition-colors">
+								<Mail className="h-5 w-5 text-green-400 flex-shrink-0" />
+								<a href="mailto:magicchalk.edu@gmail.com" className="text-gray-300 hover:text-green-400 transition-colors">
 									magicchalk.edu@gmail.com
 								</a>
 							</div>
 
 							<div className="flex items-center space-x-3">
-								<Phone className="h-5 w-5 text-red-400 flex-shrink-0" />
-								<a href="tel:+9771-5454294" className="text-gray-300 hover:text-red-400 transition-colors">
+								<Phone className="h-5 w-5 text-green-400 flex-shrink-0" />
+								<a href="tel:+9771-5454294" className="text-gray-300 hover:text-green-400 transition-colors">
 									+977 1-5454294
 								</a>
 							</div>
@@ -140,10 +140,10 @@ export default function Footer() {
 // 						<div className="space-y-1">
 // 							<p className="text-lg font-medium">Magic Chalk Day Care and Child Education Center</p>
 // 							<p className=" text-gray-200">Satdobato, Lalitpur</p>
-// 							<p className=" hover:text-red-400 transition-colors cursor-pointer">
+// 							<p className=" hover:text-green-400 transition-colors cursor-pointer">
 // 								<a href="mailto:gurungkns19@gmail.com">magicchalk.edu@gmail.com</a>
 // 							</p>
-// 							<p className=" text-gray-200 hover:text-red-400 transition-colors cursor-pointer">
+// 							<p className=" text-gray-200 hover:text-green-400 transition-colors cursor-pointer">
 // 								<a href="tel:+4745921405">+977 1-5454294</a>
 // 							</p>
 // 						</div>

@@ -12,7 +12,7 @@ export default function Blog() {
 			<section id="blog" className="bg-white">
 				<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
 					<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
-						Loading <span className="text-red-500">Blogs</span>...
+						Loading <span className="text-green-500">Blogs</span>...
 					</h2>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -52,14 +52,14 @@ export default function Blog() {
 		<section id="blog" className="">
 			<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
 				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
-					<span className="text-red-500">Blogs</span>
+					<span className="text-green-500">Blogs</span>
 				</h2>
 
 				<div className="mx-auto px-4 py-12">
 					<div className="space-y-8">
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 							{blogs &&
-								blogs.map((blog) => (
+								blogs.slice(0, 3).map((blog) => (
 									<div key={blog._id} className="group bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px]">
 										<div className="relative w-full h-64 overflow-hidden">
 											<Image src={blog?.blogMainPicture || "/placeholder.jpg"} alt={blog?.blogTitle || "Blog image"} width={500} height={500} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" />
@@ -69,17 +69,17 @@ export default function Blog() {
 												<Calendar className="w-4 h-4 mr-2" />
 												<span className="text-sm font-medium">{blog?.blogDate}</span>
 											</div>
-											<h2 className="text-xl font-bold text-gray-800 line-clamp-2 group-hover:text-red-600 transition-colors duration-200">{blog.blogTitle}</h2>
+											<h2 className="text-xl font-bold text-gray-800 line-clamp-2 group-hover:text-green-600 transition-colors duration-200">{blog.blogTitle}</h2>
 											<p className="text-gray-600 text-sm line-clamp-3">{blog.blogDescription || "Read this article to learn more about this topic."}</p>
 											<div className="pt-4">
-												<span className="inline-flex text-red-600 font-semibold text-sm group-hover:underline">Read more</span>
+												<span className="inline-flex text-green-600 font-semibold text-sm group-hover:underline">Read more</span>
 											</div>
 										</div>
 									</div>
 								))}
 						</div>
-						<div className="flex justify-center md:justify-end">
-							<Link href="/blogs" className="inline-flex items-center px-5 py-2.5 font-medium text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors duration-200">
+						<div className="flex justify-center">
+							<Link href="/blogs" className="inline-flex items-center px-5 py-2.5 font-medium text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200">
 								View All Blogs
 								<svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
 									<path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />

@@ -23,8 +23,7 @@ export default function EventsPage() {
 			}
 			mutate();
 		} catch (error) {
-			console.error("Error deleting message:", error);
-			alert("Failed to delete message. Please try again.");
+			alert("Failed to delete message. Please try again." + error);
 		}
 	};
 	const handleReplyEmail = (email) => {

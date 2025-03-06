@@ -57,7 +57,7 @@ export default function AboutUs() {
 						{/* Text Content Column */}
 						<div className="md:w-1/2">
 							<h2 className="text-3xl md:text-4xl font-bold mb-6">
-								About <span className="text-red-500">Us</span>
+								About <span className="text-green-500">Us</span>
 							</h2>
 
 							<div className="space-y-6 text-gray-800 text-lg">
@@ -82,13 +82,13 @@ export default function AboutUs() {
 				<section className="h-auto bg-black flex flex-col md:flex-row items-center rounded-lg">
 					<div className="text-center text-white p-8 lg:px-32">
 						<h2 className="text-2xl md:text-4xl font-bold mb-4">
-							Our <span className="text-red-500 leading-tight">Mission</span>
+							Our <span className="text-green-500 leading-tight">Mission</span>
 						</h2>
 						<p className="text-lg mb-4">At Magic Chalk Day Care and Child Education Center, our mission is to provide a safe, nurturing, and stimulating environment where young minds flourish through play-based learning. We are committed to fostering creativity, curiosity, and confidence in every child, ensuring a strong foundation for their future growth. Through innovative teaching methods and a caring community, we strive to make every child’s early years joyful and enriching.</p>
 					</div>
 					<div className="text-center text-white p-8 lg:px-32">
 						<h2 className="text-2xl md:text-4xl font-bold mb-4">
-							Our <span className="text-red-500 leading-tight">Vision</span>
+							Our <span className="text-green-500 leading-tight">Vision</span>
 						</h2>
 						<p className="text-lg mb-4">Our vision is to be a leading early childhood education center, recognized for its holistic approach to learning and care. We aspire to create a home away from home where children feel loved, valued, and empowered to explore their world. By nurturing lifelong learners, we aim to shape a future where every child reaches their full potential with confidence, kindness, and creativity.</p>
 					</div>
@@ -96,12 +96,12 @@ export default function AboutUs() {
 
 				<section className="my-20">
 					<h2 className="text-2xl md:text-4xl font-bold mb-8 text-center">
-						School <span className="text-red-500 leading-tight">Facilities</span>
+						School <span className="text-green-500 leading-tight">Facilities</span>
 					</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-16">
 						{services.map((service, index) => (
 							<Card key={index} className="overflow-hidden max-h-[500px]">
-								<CardHeader className="bg-red-700 text-white p-4 lg:px-8">
+								<CardHeader className="bg-green-700 text-white p-4 lg:px-8">
 									<CardTitle className="flex items-center text-xl">
 										{service.icon}
 										<span className="ml-2">{service.title}</span>
@@ -118,14 +118,14 @@ export default function AboutUs() {
 
 				{/* <section className="bg-slate-100 text-slate-800 p-8 my-16 rounded-lg">
 					<h2 className="text-2xl md:text-4xl font-bold mb-4 text-center">
-						Why Choose <span className="text-red-600 leading-tight">Us</span>
+						Why Choose <span className="text-green-600 leading-tight">Us</span>
 					</h2>
 					<ul className="grid grid-cols-1 md:grid-cols-2 gap-4 list-none">
 						{reasons.map((reason, index) => (
 							<li key={index} className="flex space-y-4 items-start">
-								<Sparkles className="mr-2 mt-4 text-red-500" />
+								<Sparkles className="mr-2 mt-4 text-green-500" />
 								<div>
-									<h3 className="font-semibold text-red-600">{reason.title}</h3>
+									<h3 className="font-semibold text-green-600">{reason.title}</h3>
 									<p>{reason.description}</p>
 								</div>
 							</li>
@@ -133,11 +133,11 @@ export default function AboutUs() {
 					</ul>
 				</section> */}
 
-				<section className="my-6 md:my-16 h-auto bg-red-700 rounded-lg">
+				<section className="my-6 md:my-16 h-auto bg-green-700 rounded-lg">
 					<div className="text-center text-black p-8">
 						<p className="text-xl text-white md:text-3xl mb-8">So, are you ready to shape a future of your child with us?</p>
-						<Link href="request-a-quote" className="border-b bg-black hover:bg-red-900 rounded-full py-4 px-12 text-white font-bold">
-							Book Free Consultation Now
+						<Link href="request-a-quote" className="border-b bg-black hover:bg-green-900 rounded-full py-4 px-12 text-white font-bold">
+							Book Appointment
 						</Link>
 					</div>
 				</section>

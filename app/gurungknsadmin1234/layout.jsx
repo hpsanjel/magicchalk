@@ -9,11 +9,9 @@ import { useSession } from "next-auth/react";
 const menuItems = [
 	{ id: "gurungknsadmin1234", label: "Dashboard", icon: LayoutDashboard },
 	{ id: "hero", label: "Hero", icon: LayoutDashboard },
-	{ id: "quotes", label: "Quotes", icon: Book },
 	{ id: "contactmessages", label: "Contact Messages", icon: Book },
 	{ id: "events", label: "Events", icon: BookImage },
 	{ id: "blogs", label: "Blogs", icon: Newspaper },
-	// { id: "artists", label: "Artists", icon: Drama },
 	{ id: "testimonials", label: "Testimonials", icon: MessageCircle },
 	{ id: "gallery", label: "Gallery", icon: GalleryThumbnails },
 	{ id: "partners", label: "Partners", icon: Handshake },

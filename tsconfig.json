@@ -47,7 +47,12 @@
 		"components/SearchModal.jsx",
 		"components/SearchBox.jsx",
 		"app/contact/page.tsx",
-		"components/DisplayPrices.jsx"
+		"components/DisplayPrices.jsx",
+		"components/Testimonials.jsx",
+		"components/testimonials-masonry.jsx",
+		"components/testimonials-alt.jsx",
+		"components/Blog.jsx",
+		"components/TestimonialCard.jsx"
 	],
 	"exclude": ["node_modules"]
 }
