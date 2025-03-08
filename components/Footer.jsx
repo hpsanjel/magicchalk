@@ -8,7 +8,6 @@ export default function Footer() {
 	// const { data: settings, error, loading } = useFetchData("/api/settings", "settings");
 
 	// if (loading) return <p>Loading...</p>;
-	if (error) return <p>Loading failed{error}</p>;
 
 	return (
 		<footer className="bg-gradient-to-b from-gray-900 to-black text-white">

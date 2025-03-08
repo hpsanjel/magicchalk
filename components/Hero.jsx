@@ -57,7 +57,7 @@ export default function Hero() {
 		}, 5000); // Change slide every 7 seconds
 
 		return () => clearInterval(interval);
-	}, [currentSlide, nextSlide, isAnimating]);
+	}, [currentSlide, isAnimating]);
 
 	const scrollToNextSection = useCallback(() => {
 		console.log("Scroll button clicked");
