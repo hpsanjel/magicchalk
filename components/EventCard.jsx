@@ -23,9 +23,8 @@ const EventCard = ({ date, title }) => {
 
 const KindergartenEventsGrid = ({ events }) => {
 	return (
-		<div className="px-4 h-[600px]">
-			<div className="grid gap-4">
-				{/* <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"> */}
+		<div className="p-12 mx-auto">
+			<div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 				{events.map((event, index) => (
 					<EventCard key={index} date={event.eventdate} title={event.eventname} />
 				))}

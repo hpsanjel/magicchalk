@@ -10,7 +10,7 @@ export default function UpcomingEvents() {
 
 	return (
 		<>
-			<section id="events" className="mx-auto py-6 bg-gray-100">
+			<section id="events" className="mx-auto py-6 md:py-20 bg-gray-100">
 				<div className="px-2 sm:px-4 container mx-auto">
 					<p className="text-3xl font-bold text-center mb-6">
 						Upcoming <span className="text-green-500">Events</span>

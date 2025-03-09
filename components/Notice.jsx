@@ -20,8 +20,8 @@ export default function Notices() {
 	];
 
 	return (
-		<div className="bg-gradient-to-b from-green-50 to-white min-h-screen">
-			<div className="container max-w-6xl mx-auto px-4 pt-32 pb-20">
+		<div className="bg-gradient-to-b from-green-50 to-white">
+			<div className="container max-w-6xl mx-auto px-4 py-20">
 				<div className="text-center mb-16">
 					<h1 className="text-4xl font-bold mb-4">
 						School <span className="text-green-500">Notices</span>

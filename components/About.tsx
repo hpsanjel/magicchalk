@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import HomeVideo from "@/components/HomeVideo";
-import UpcomingEvents from "./UpcomingEvents";
 
 export default function About() {
 	return (
@@ -51,7 +50,6 @@ export default function About() {
 						<HomeVideo />
 					</div>
 				</motion.div>
-				<UpcomingEvents />
 			</div>
 		</section>
 	);

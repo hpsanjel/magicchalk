@@ -7,6 +7,7 @@ import PartnersSlider from "@/components/PartnersSlider";
 import Gallery from "@/components/Gallery";
 import Blog from "@/components/Blog";
 import Notice from "@/components/Notice";
+import UpcomingEvents from "@/components/UpcomingEvents";
 // import Post from "@/components/Post";
 
 export default function LandingPage() {
@@ -15,8 +16,9 @@ export default function LandingPage() {
 			<main>
 				<Hero />
 				{/* <Post /> */}
-				<Notice />
 				<About />
+				<Notice />
+				<UpcomingEvents />
 				<PartnersSlider />
 				<Testimonials />
 				<Blog />
