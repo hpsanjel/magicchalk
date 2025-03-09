@@ -29,7 +29,6 @@ export async function GET(req, { params }) {
 
 	try {
 		const blog = await Blog.findById(id);
-		console.log("Blog result:", blog); // Log the query result
 
 		if (!blog) {
 			console.error("Blog not found:", id);
@@ -51,7 +50,6 @@ export async function PUT(request, { params }) {
 
 		// Fetch form data
 		const formData = await request.formData();
-		console.log("Received form data: ", formData);
 
 		// Get existing blog from DB
 		const existingBlog = await Blog.findById(id);
@@ -62,7 +60,7 @@ export async function PUT(request, { params }) {
 		// Update text fields
 		const blogTitle = formData.get("blogTitle") || existingBlog.blogTitle;
 		const blogDesc = formData.get("blogDesc") || existingBlog.blogDesc;
-		const blogAuthor = formData.get("blogAuthor") || existingBlog.blogAuthor;
+		// const blogAuthor = formData.get("blogAuthor") || existingBlog.blogAuthor;
 		const blogDate = formData.get("blogDate") || existingBlog.blogDate;
 
 		// Handle images
@@ -90,7 +88,7 @@ export async function PUT(request, { params }) {
 		// Update the blog in the database
 		existingBlog.blogTitle = blogTitle;
 		existingBlog.blogDesc = blogDesc;
-		existingBlog.blogAuthor = blogAuthor;
+		// existingBlog.blogAuthor = blogAuthor;
 		existingBlog.blogDate = blogDate;
 		existingBlog.blogMainPicture = blogMainPictureUrl;
 		existingBlog.blogSecondPicture = blogSecondPictureUrl;
@@ -110,8 +108,9 @@ export async function DELETE(request, { params }) {
 	try {
 		await connectDB();
 
-		const blogId = id;
-		const deletedblog = await Blog.findByIdAndDelete(blogId);
+		console.log("Deleting blog with ID:", id);
+
+		const deletedblog = await Blog.findByIdAndDelete(id);
 
 		if (!deletedblog) {
 			return NextResponse.json({ success: false, error: "Blog not found" }, { status: 404 });

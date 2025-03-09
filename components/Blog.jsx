@@ -51,9 +51,10 @@ export default function Blog() {
 	return (
 		<section id="blog" className="">
 			<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
+				<h2 className="text-3xl font-bold text-center mb-6">
 					<span className="text-green-500">Blogs</span>
 				</h2>
+				<div className="w-24 h-1 bg-green-500 mx-auto mb-6 md:mb-12 rounded-full"></div>
 
 				<div className="mx-auto px-4 py-12">
 					<div className="space-y-8">

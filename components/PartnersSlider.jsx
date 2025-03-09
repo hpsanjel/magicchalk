@@ -36,9 +36,11 @@ const PartnersSlider = () => {
 	return (
 		<section className=" py-16 px-4 sm:py-24">
 			<div className="container mx-auto max-w-7xl">
-				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
+				<h2 className="text-3xl font-bold text-center mb-6">
 					Our <span className="text-green-500">Schools</span>
 				</h2>
+				<div className="w-24 h-1 bg-green-500 mx-auto mb-6 md:mb-12 rounded-full"></div>
+
 				<div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
 					{/* {partners?.map((logo) => (
 						<Card key={logo._id} className="group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white overflow-hidden">

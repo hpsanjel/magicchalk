@@ -59,6 +59,7 @@ export default function AboutUs() {
 							<h2 className="text-3xl md:text-4xl font-bold mb-6">
 								About <span className="text-green-500">Us</span>
 							</h2>
+							<div className="w-24 h-1 bg-green-500 mb-6 md:mb-12 rounded-full"></div>
 
 							<div className="space-y-6 text-gray-800 text-lg">
 								<p>Welcome to Magic Chalk Day Care and Child Education Center, a place where learning meets laughter and every child’s potential is nurtured with care. We are dedicated to providing a safe, stimulating, and loving environment where children embark on their journey of discovery through play-based learning and structured activities.</p>

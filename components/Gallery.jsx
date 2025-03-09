@@ -66,10 +66,10 @@ export default function Gallery() {
 	return (
 		<section id="gallery" className="py-12 sm:py-16 bg-gray-100">
 			<div className="container mx-auto px-2 sm:px-4">
-				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
+				<h2 className="text-3xl font-bold text-center mb-6">
 					<span className="text-green-500">Gallery</span>
 				</h2>
-				;{/* Filter Buttons */}
+				<div className="w-24 h-1 bg-green-500 mx-auto mb-6 md:mb-12 rounded-full"></div>;{/* Filter Buttons */}
 				<div className="flex flex-wrap justify-center gap-4 mb-8">
 					{filters.map((filter) => (
 						<button key={filter} onClick={() => scrollToSection(filter)} className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300 ${activeFilter === filter ? "bg-green-700 text-slate-200" : "bg-white text-slate-800 hover:bg-green-100"}`}>
