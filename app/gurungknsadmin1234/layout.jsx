@@ -3,13 +3,15 @@
 import React from "react";
 import Link from "next/link";
 import { useActiveMenu } from "@/context/ActiveMenuContext";
-import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, Handshake, ArrowBigLeft, Book, Newspaper } from "lucide-react";
+import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, Handshake, ArrowBigLeft, Book, Newspaper, Timer, File } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 const menuItems = [
 	{ id: "gurungknsadmin1234", label: "Dashboard", icon: LayoutDashboard },
 	{ id: "hero", label: "Hero", icon: LayoutDashboard },
 	{ id: "contactmessages", label: "Contact Messages", icon: Book },
+	{ id: "appointments", label: "Appointments", icon: Timer },
+	{ id: "admissions", label: "Admissions", icon: File },
 	{ id: "events", label: "Events", icon: BookImage },
 	{ id: "blogs", label: "Blogs", icon: Newspaper },
 	{ id: "testimonials", label: "Testimonials", icon: MessageCircle },

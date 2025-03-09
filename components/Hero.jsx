@@ -18,7 +18,7 @@ export default function Hero() {
 			title: "Welcome to Magic Chalk Day Care and Child Education Center",
 			description: "Discover Magic Chalk Day Care and Child Education Center, where parents find the perfect blend of nurturing care and innovative learning for their toddlers.",
 			primaryButton: "Explore Our School",
-			primaryLink: "/explore",
+			primaryLink: "/about-us",
 			secondaryButton: "Book School Tour",
 			secondaryLink: "/book-tour",
 			primaryColor: "#F2A649",
@@ -40,7 +40,7 @@ export default function Hero() {
 			title: "Growing Bright Minds For Tomorrow",
 			description: "We provide age-appropriate activities that foster creativity, critical thinking, and a lifelong love of learning in a nurturing community.",
 			primaryButton: "Enroll Today",
-			primaryLink: "/enroll",
+			primaryLink: "/admission",
 			secondaryButton: "View Programs",
 			secondaryLink: "/programs",
 			primaryColor: "#50C878", // Emerald green
@@ -57,7 +57,7 @@ export default function Hero() {
 		}, 5000); // Change slide every 7 seconds
 
 		return () => clearInterval(interval);
-	}, [currentSlide, isAnimating]);
+	}, [currentSlide, nextSlide, isAnimating]);
 
 	const scrollToNextSection = useCallback(() => {
 		console.log("Scroll button clicked");
