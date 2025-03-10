@@ -48,17 +48,6 @@ export default function Hero() {
 		},
 	];
 
-	// Auto-slide functionality
-	useEffect(() => {
-		const interval = setInterval(() => {
-			if (!isAnimating) {
-				nextSlide();
-			}
-		}, 5000); // Change slide every 7 seconds
-
-		return () => clearInterval(interval);
-	}, [currentSlide, nextSlide, isAnimating]);
-
 	const scrollToNextSection = useCallback(() => {
 		console.log("Scroll button clicked");
 		window.scrollTo({
@@ -86,6 +75,17 @@ export default function Hero() {
 		// Reset animation state after transition completes
 		setTimeout(() => setIsAnimating(false), 1000);
 	}, [isAnimating, slides.length]);
+
+	// Auto-slide functionality
+	useEffect(() => {
+		const interval = setInterval(() => {
+			if (!isAnimating) {
+				nextSlide();
+			}
+		}, 5000); // Change slide every 7 seconds
+
+		return () => clearInterval(interval);
+	}, [currentSlide, nextSlide, isAnimating]);
 
 	const currentSlideData = slides[currentSlide];
 
