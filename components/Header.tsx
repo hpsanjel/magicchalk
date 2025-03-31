@@ -70,8 +70,8 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 				</div>
 			</div>
 			{isMenuOpen && (
-				<motion.div className="md:hidden bg-red-700" initial={{ opacity: 0, x: 300 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 300 }} transition={{ duration: 0.1 }}>
-					<div className="fixed right-0 w-full h-full bg-red-700">
+				<motion.div className="md:hidden bg-green-700" initial={{ opacity: 0, x: 300 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 300 }} transition={{ duration: 0.1 }}>
+					<div className="fixed right-0 w-full h-full bg-green-700">
 						<nav className="flex flex-col items-center text-xl font-semibold py-24">
 							<NavLink href="/gurungknsadmin1234" onClick={toggleMenu}>
 								Dashboard
@@ -90,16 +90,8 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 								Contact Us
 							</NavLink>
 							<div className="mt-12 text-slate-300 text-center">
-								<p className="text-md underline">For urgent message</p>
-								<p>Call: 45656546</p>
-							</div>
-							<div className="flex mt-12 gap-4">
-								<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
-									<Facebook />
-								</Link>
-								<Link href="/" className={`border-b border-transparent hover:border-b hover:scale-110 ${isScrolled ? "text-black " : "text-slate-700 hover:text-slate-700"}`}>
-									<Instagram />
-								</Link>
+								<p className="text-md underline">For Admission Enquiry</p>
+								<p>Call: 01-5454294</p>
 							</div>
 						</nav>
 					</div>

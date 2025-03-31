@@ -33,7 +33,6 @@ export default function EventsPage() {
 				mutate();
 			} catch (error) {
 				console.error("Error deleting event:", error);
-				alert("Failed to delete event. Please try again.");
 			}
 		}
 	};
