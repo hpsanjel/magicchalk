@@ -20,7 +20,7 @@ export default function Hero() {
 			primaryButton: "Explore Our School",
 			primaryLink: "/about-us",
 			secondaryButton: "Book School Tour",
-			secondaryLink: "/book-tour",
+			secondaryLink: "/school-tour-form",
 			primaryColor: "#F2A649",
 			primaryHover: "#e6963d",
 		},

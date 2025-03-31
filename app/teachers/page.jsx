@@ -3,16 +3,16 @@ import Image from "next/image";
 
 const teachers = [
 	{
-		name: "Sita Sharma",
-		subject: "Mathematics",
+		name: "Suneeta Shah",
+		subject: "Language Arts",
 		experience: "10 years",
-		bio: "Passionate about making numbers fun and engaging for young learners.",
+		bio: "Passionate about making langauge fun and engaging for young learners.",
 		image: "/sunita.jpeg",
 	},
 	{
-		name: "Rajesh Thapa",
+		name: "Swostika Tuladhar",
 		subject: "English",
-		experience: "8 years",
+		experience: "4 years",
 		bio: "Dedicated to helping children develop strong language skills.",
 		image: "/swostika.jpeg",
 	},
@@ -48,7 +48,7 @@ const teachers = [
 
 const Teachers = () => {
 	return (
-		<div className="container mx-auto pt-32 p-6 max-w-5xl min-h-screen">
+		<div className="container mx-auto py-32 p-6 max-w-5xl min-h-screen">
 			<h1 className="text-3xl font-bold text-center mb-8">Our Team</h1>
 			<div className="w-24 h-1 bg-green-500 mx-auto mb-6 md:mb-12 rounded-full"></div>
 
