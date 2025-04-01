@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import AdminDashboard from "@/app/gurungknsadmin1234/appointments/admin-dashboard";
+import AdminDashboard from "@/app/dashboard/appointments/admin-dashboard";
 import type { Appointment } from "@/lib/models";
 
 export default async function AdminPage() {

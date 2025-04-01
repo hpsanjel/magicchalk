@@ -73,7 +73,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 				<motion.div className="md:hidden bg-green-700" initial={{ opacity: 0, x: 300 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 300 }} transition={{ duration: 0.1 }}>
 					<div className="fixed right-0 w-full h-full bg-green-700">
 						<nav className="flex flex-col items-center text-xl font-semibold py-24">
-							<NavLink href="/gurungknsadmin1234" onClick={toggleMenu}>
+							<NavLink href="/dashboard" onClick={toggleMenu}>
 								Dashboard
 							</NavLink>
 							<NavLink href="/gallery" onClick={toggleMenu}>

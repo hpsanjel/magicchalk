@@ -3,14 +3,14 @@
 import React, { createContext, useContext, useState } from "react";
 
 const ActiveMenuContext = createContext({
-	activeMenu: "gurungknsadmin1234",
+	activeMenu: "dashboard",
 	setActiveMenu: (menu) => {},
 });
 
 export const useActiveMenu = () => useContext(ActiveMenuContext);
 
 export const ActiveMenuProvider = ({ children }) => {
-	const [activeMenu, setActiveMenu] = useState("gurungknsadmin1234");
+	const [activeMenu, setActiveMenu] = useState("dashboard");
 
 	return <ActiveMenuContext.Provider value={{ activeMenu, setActiveMenu }}>{children}</ActiveMenuContext.Provider>;
 };

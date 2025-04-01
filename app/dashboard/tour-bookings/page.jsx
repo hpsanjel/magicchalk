@@ -244,7 +244,7 @@ export default function AdminTourBookings() {
 														<option value="cancelled">Cancelled</option>
 													</select>
 
-													{/* <button onClick={() => router.push(`/gurungknsadmin1234/tour-bookings/${booking._id}`)} className="text-indigo-600 hover:text-indigo-900">
+													{/* <button onClick={() => router.push(`/dashboard/tour-bookings/${booking._id}`)} className="text-indigo-600 hover:text-indigo-900">
 														View
 													</button> */}
 

@@ -49,7 +49,7 @@ export default function SubscribersPage() {
 			</head>
 			<body>
 			  <div class="print-container">
-				<h2>Employee Details</h2>
+				<h2>Admission Application Details</h2>
 				<table class="print-table">
 				  <tr>
 					<th>Name</th>

@@ -26,5 +26,5 @@ export function middleware(req) {
 
 // Define protected routes
 export const config = {
-	matcher: ["/gurungknsadmin1234/:path*"], // Protect all routes under /dashboard
+	matcher: ["/dashboard/:path*"], // Protect all routes under /dashboard
 };

@@ -34,5 +34,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-	matcher: ["/gurungknsadmin1234/:path*"],
+	matcher: ["/dashboard/:path*"],
 };
