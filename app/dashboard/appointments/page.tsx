@@ -5,7 +5,7 @@ import AdminDashboard from "@/app/dashboard/appointments/admin-dashboard";
 import useFetchData from "@/hooks/useFetchData";
 
 export default function AdminPage() {
-	const { data: tourBookings, error, loading, mutate } = useFetchData("/api/tour-bookings", "tourBookings");
+	const { data: tourBookings } = useFetchData("/api/tour-bookings", "tourBookings");
 
 	return (
 		<div className="container mx-auto px-4 py-12">
