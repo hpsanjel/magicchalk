@@ -46,6 +46,9 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 						<Link href="/contact" className={`border-b border-transparent hover:border-b hover:border-b-yellow-400 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"} ${pathname === "/contact" ? "border-b-2 border-green-700" : ""}`}>
 							Contact Us
 						</Link>
+						<Link href="/dashboard" className={`border-b border-transparent hover:border-b hover:border-b-yellow-400 ${isScrolled ? "text-black " : "text-white hover:text-slate-100"} ${pathname === "/contact" ? "border-b-2 border-green-700" : ""}`}>
+							Login
+						</Link>
 					</nav>
 				</div>
 
