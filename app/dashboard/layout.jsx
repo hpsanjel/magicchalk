@@ -18,6 +18,7 @@ const menuItems = [
 	{ id: "gallery", label: "Gallery", icon: GalleryThumbnails },
 	{ id: "partners", label: "Partners", icon: Handshake },
 	{ id: "users", label: "Users", icon: User },
+	{ id: "notices", label: "Notices", icon: MessageCircle },
 	{ id: "subscribers", label: "Subscribers", icon: Mail },
 	{ id: "settings", label: "Profile Settings", icon: Settings },
 ];
