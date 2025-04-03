@@ -10,10 +10,10 @@ export default function BlogSidebar({ blog, blogs }) {
 
 			{/* Other Blogs */}
 			<div className="bg-white rounded-lg shadow-sm p-6">
-				<h3 className="text-lg font-semibold text-gray-800 mb-4">Other posts</h3>
+				<h3 className="text-lg font-semibold text-gray-800 mb-4">Blog Posts</h3>
 				<div className="space-y-4">
 					{blogs.map((relBlog) => (
-						<Link href={`/blog/${relBlog._id}`} key={relBlog._id} className="flex space-x-4 group">
+						<Link href={`/blogs/${relBlog._id}`} key={relBlog._id} className="flex space-x-4 group">
 							<div className="relative w-16 h-16 flex-shrink-0">
 								<Image src={relBlog?.blogMainPicture || "Image"} alt={relBlog.blogTitle || "Blog Title"} fill className="object-cover rounded-md" />
 							</div>

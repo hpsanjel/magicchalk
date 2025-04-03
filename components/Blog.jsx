@@ -62,7 +62,7 @@ export default function Blog() {
 					<div className="space-y-8">
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 							{blogs &&
-								blogs.slice(0, 3).map((blog) => (
+								blogs.map((blog) => (
 									<div key={blog._id} className="group bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px]">
 										<div className="relative w-full h-64 overflow-hidden">
 											<Image src={blog?.blogMainPicture || "/placeholder.jpg"} alt={blog?.blogTitle || "Blog image"} width={500} height={500} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" />
