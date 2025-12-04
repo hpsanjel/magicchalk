@@ -212,12 +212,17 @@ export default function AdmissionForm() {
 			setFormSuccess("Thank you! Your application has been submitted successfully.");
 			console.log("Form submitted successfully:", result);
 
-			// Optionally reset the form after submission
-			// formRef.current.reset();
-			// setPhotoPreview(null);
+			// Reset the form after submission
+			formRef.current.reset();
+			setPhotoPreview(null);
+
+			// Scroll to top to show success message
+			window.scrollTo({ top: 0, behavior: "smooth" });
 		} catch (error) {
 			console.error("Error submitting form:", error);
 			setFormError(error.message || "Failed to submit application. Please try again.");
+			// Scroll to top to show error message
+			window.scrollTo({ top: 0, behavior: "smooth" });
 		} finally {
 			setIsSubmitting(false);
 		}

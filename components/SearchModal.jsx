@@ -17,7 +17,7 @@ export default function SearchModal({ closeModal }) {
 		e.preventDefault();
 		closeModal();
 		if (typeof window !== "undefined") {
-			router.push(`/events?query=${encodeURIComponent(searchQuery)}`);
+			router.push(`/programs?query=${encodeURIComponent(searchQuery)}`);
 		}
 	};
 

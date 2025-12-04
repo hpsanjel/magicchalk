@@ -86,16 +86,13 @@ export default function AuthForm() {
 	}, []);
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-100">
-			<Card className="w-full max-w-md">
-				<CardHeader className="bg-green-700 text-slate-200 rounded-t-lg">
+		<div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+			<Card className="w-full max-w-md mx-auto">
+				<CardHeader className="bg-green-700 text-slate-200 rounded-t-lg text-center">
 					<CardTitle className="text-2xl font-bold">Login</CardTitle>
 				</CardHeader>
 				<CardContent className="mt-6">
-					<div className="mb-6 flex justify-center">
-						<Image src="/magicchalklogo.png" alt="Auth" className="w-32 h-auto border boder-gray-300" width={100} height={100} />
-					</div>
-					{error && <p className="text-red-500 mb-4">{error}</p>}
+					{error && <p className="text-red-500 mb-4 text-center">{error}</p>}
 					<Tabs defaultValue="login" className="w-full">
 						<TabsContent value="login">
 							<form onSubmit={handleLogin}>

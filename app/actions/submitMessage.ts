@@ -9,12 +9,17 @@ export async function submitMessage(formData: FormData) {
 		await connectDB();
 
 		const message = new Message({
+			firstName: String(formData.get("firstName")),
+			lastName: String(formData.get("lastName")),
+			email: String(formData.get("email")),
+			phone: String(formData.get("phone")),
+			message: String(formData.get("message")),
+		});
+
+		console.log("Received data:", {
 			firstName: formData.get("firstName"),
 			lastName: formData.get("lastName"),
-			email: formData.get("email"),
-			phone: formData.get("phone"),
-			country: formData.get("country"),
-			message: formData.get("message"),
+			// ...
 		});
 
 		await message.save();

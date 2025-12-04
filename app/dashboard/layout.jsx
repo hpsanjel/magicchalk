@@ -16,7 +16,6 @@ const menuItems = [
 	{ id: "blogs", label: "Blogs", icon: Newspaper },
 	{ id: "testimonials", label: "Testimonials", icon: MessageCircle },
 	{ id: "gallery", label: "Gallery", icon: GalleryThumbnails },
-	{ id: "partners", label: "Partners", icon: Handshake },
 	{ id: "users", label: "Users", icon: User },
 	{ id: "notices", label: "Notices", icon: MessageCircle },
 	{ id: "subscribers", label: "Subscribers", icon: Mail },

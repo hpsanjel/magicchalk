@@ -15,7 +15,6 @@ export default function DashboardGrid() {
 		{ name: "Blogs", icon: Newspaper, href: "/dashboard/blogs", id: "blogs", color: "bg-orange-700" },
 		{ name: "Testimonials", icon: MessageSquare, href: "/dashboard/testimonials", id: "testimonials", color: "bg-yellow-800" },
 		{ name: "Gallery", icon: Image, href: "/dashboard/gallery", id: "gallery", color: "bg-orange-500" },
-		{ name: "Partners", icon: Handshake, href: "/dashboard/partners", id: "partners", color: "bg-blue-600" },
 		{ name: "Users", icon: User, href: "/dashboard/users", id: "users", color: "bg-green-900" },
 		{ name: "Notices", icon: MessageSquare, href: "/dashboard/notices", id: "notices", color: "bg-yellow-800" },
 		{ name: "Subscribers", icon: Mail, href: "/dashboard/subscribers", id: "subscribers", color: "bg-green-700" },

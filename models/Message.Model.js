@@ -21,10 +21,7 @@ const MessageSchema = new mongoose.Schema({
 		required: [true, "Phone number is required"],
 		minlength: [10, "Phone number must be at least 10 digits long"],
 	},
-	country: {
-		type: String,
-		required: [true, "Country is required"],
-	},
+
 	message: {
 		type: String,
 		required: [true, "Message is required"],

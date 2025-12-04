@@ -3,7 +3,6 @@
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Testimonials from "@/components/Testimonials";
-import PartnersSlider from "@/components/PartnersSlider";
 import Gallery from "@/components/Gallery";
 import Blog from "@/components/Blog";
 import Notice from "@/components/Notice";
@@ -19,7 +18,6 @@ export default function LandingPage() {
 				<About />
 				<Notice />
 				<UpcomingEvents />
-				<PartnersSlider />
 				<Testimonials />
 				<Blog />
 				<Gallery />

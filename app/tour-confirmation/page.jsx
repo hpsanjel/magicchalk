@@ -11,7 +11,7 @@ export default function TourConfirmation() {
 				<meta name="description" content="Thank you for booking a tour at our kindergarten." />
 			</Head>
 
-			<div className="max-w-3xl mx-auto p-6 md:p-8 my-8 bg-white rounded-lg shadow-md">
+			<div className="max-w-3xl mx-auto p-6 md:p-8 md:pt-36 md:pb-12  bg-white rounded-lg shadow-md">
 				<div className="text-center">
 					<h1 className="text-3xl font-bold text-green-600 mb-6">Thank You for Booking a Tour!</h1>
 

@@ -6,9 +6,7 @@ import { toast } from "react-hot-toast";
 
 export default function EmployeeForm({ settingdata }) {
 	const [formData, setFormData] = useState({
-		profilePhoto: "",
 		name: "",
-		position: "",
 		address: "",
 		email: "",
 		phone: "",
@@ -18,8 +16,6 @@ export default function EmployeeForm({ settingdata }) {
 		instagram: "",
 		linkedin: "",
 		businessHoursMF: "",
-		businessHoursSat: "",
-		businessHoursSun: "",
 		companyLogo: "",
 	});
 	const [submitting, setSubmitting] = useState(false);
@@ -93,24 +89,12 @@ export default function EmployeeForm({ settingdata }) {
 		<form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 md:gap-12 bg-white px-2 md:px-12 md:pt-6 pb-2 md:pb-8">
 			<div>
 				<div className="mb-4">
-					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="profilePhoto">
-						Profile Photo
-					</label>
-					{formData.profilePhoto && <Image src={formData.profilePhoto || "/placeholder.jpg"} alt="Profile" width={100} height={100} className="w-24 h-24 mb-2 rounded-full" />}
-					<input type="file" id="profilePhoto" name="profilePhoto" onChange={handleImageChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-				</div>
-				<div className="mb-4">
 					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
 						Name
 					</label>
 					<input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
 				</div>
-				<div className="mb-4">
-					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="position">
-						Position
-					</label>
-					<input type="text" id="position" name="position" value={formData.position} onChange={handleChange} required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-				</div>
+
 				<div className="mb-4">
 					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="address">
 						Address
@@ -167,18 +151,7 @@ export default function EmployeeForm({ settingdata }) {
 					</label>
 					<input type="text" id="businessHoursMF" name="businessHoursMF" value={formData.businessHoursMF} onChange={handleChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
 				</div>
-				<div className="mb-4">
-					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="businessHoursSat">
-						Business Hours (Sat)
-					</label>
-					<input type="text" id="businessHoursSat" name="businessHoursSat" value={formData.businessHoursSat} onChange={handleChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-				</div>
-				<div className="mb-4">
-					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="businessHoursSun">
-						Business Hours (Sun)
-					</label>
-					<input type="text" id="businessHoursSun" name="businessHoursSun" value={formData.businessHoursSun} onChange={handleChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-				</div>
+
 				<div className="mb-4">
 					<label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="companyLogo">
 						Company Logo

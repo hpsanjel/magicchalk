@@ -81,13 +81,13 @@ export default function AboutUs() {
 				</section>
 
 				<section className="h-auto bg-black flex flex-col md:flex-row items-center rounded-lg">
-					<div className="text-center text-white p-8 lg:px-32">
+					<div className=" text-white p-8 lg:px-32">
 						<h2 className="text-2xl md:text-4xl font-bold mb-4">
 							Our <span className="text-green-500 leading-tight">Mission</span>
 						</h2>
 						<p className="text-lg mb-4">At Magic Chalk Day Care and Child Education Center, our mission is to provide a safe, nurturing, and stimulating environment where young minds flourish through play-based learning. We are committed to fostering creativity, curiosity, and confidence in every child, ensuring a strong foundation for their future growth. Through innovative teaching methods and a caring community, we strive to make every child’s early years joyful and enriching.</p>
 					</div>
-					<div className="text-center text-white p-8 lg:px-32">
+					<div className=" text-white p-8 lg:px-32">
 						<h2 className="text-2xl md:text-4xl font-bold mb-4">
 							Our <span className="text-green-500 leading-tight">Vision</span>
 						</h2>
@@ -137,7 +137,7 @@ export default function AboutUs() {
 				<section className="my-6 md:my-16 h-auto bg-green-700 rounded-lg">
 					<div className="text-center text-black p-8">
 						<p className="text-xl text-white md:text-3xl mb-8">So, are you ready to shape a future of your child with us?</p>
-						<Link href="request-a-quote" className="border-b bg-black hover:bg-green-900 rounded-full py-4 px-12 text-white font-bold">
+						<Link href="school-tour-form" className="border-b bg-black hover:bg-green-900 rounded-full py-4 px-12 text-white font-bold">
 							Book Appointment
 						</Link>
 					</div>

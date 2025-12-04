@@ -14,60 +14,166 @@ export default function SubscribersPage() {
 	const { data: admissions, error, loading, mutate } = useFetchData("/api/admissions", "admissions");
 	const handlePrint = (data) => {
 		// Create a new window to hold the printable content
+		// 	<div class="photo-section">
+		//     <strong>Child's Photo:</strong><br>
+		//     <div class="photo-placeholder">
+		//       Photo will be attached separately
+		//     </div>
+		//   </div>
 		const printWindow = window.open("", "", "width=800,height=600");
 
 		// Define the content for printing
 		const content = `
-		  <html>
-			<head>
-			  <style>
-				@page {
-				  size: A4;
-				  margin: 20mm;
-				}
-				body {
-				  font-family: Arial, sans-serif;
-				  margin: 0;
-				  padding: 0;
-				}
-				.print-container {
-				  width: 100%;
-				  margin: auto;
-				  padding: 20px;
-				  text-align: center;
-				}
-				.print-table {
-				  width: 100%;
-				  border-collapse: collapse;
-				}
-				.print-table th, .print-table td {
-				  border: 1px solid #ddd;
-				  padding: 8px;
-				  text-align: left;
-				}
-			  </style>
-			</head>
-			<body>
-			  <div class="print-container">
-				<h2>Admission Application Details</h2>
-				<table class="print-table">
-				  <tr>
-					<th>Name</th>
-					<td>${data.childName}</td>
-				  </tr>
-				  <tr>
-					<th>Position</th>
-					<td>${data.address}</td>
-				  </tr>
-				  <tr>
-					<th>Email</th>
-					<td>${data.email}</td>
-				  </tr>
-				</table>
-			  </div>
-			</body>
-		  </html>
-		`;
+    <html>
+    <head>
+      <style>
+        @page {
+          size: A4;
+          margin: 20mm;
+        }
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          line-height: 1.4;
+        }
+        .print-container {
+          width: 100%;
+          margin: auto;
+          padding: 15px;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #333;
+          padding-bottom: 10px;
+        }
+        .section {
+          margin-bottom: 20px;
+        }
+        .section-title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 10px;
+          padding: 8px;
+          background-color: #f5f5f5;
+          border-left: 4px solid #22c55e;
+        }
+        .print-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 15px;
+        }
+        .print-table th, .print-table td {
+          border: 1px solid #ddd;
+          padding: 10px;
+          text-align: left;
+          vertical-align: top;
+        }
+        .print-table th {
+          background-color: #f9f9f9;
+          font-weight: bold;
+          width: 30%;
+        }
+        .photo-section {
+          text-align: center;
+          margin: 20px 0;
+        }
+        .photo-placeholder {
+          width: 120px;
+          height: 120px;
+          border: 2px dashed #ccc;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #666;
+          font-size: 12px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="print-container">
+        <div class="header">
+          <h1>Magic Chalk Kindergarten</h1>
+          <p>Student Admission Form</p>
+        </div>
+	
+
+        <!-- Child Information Section -->
+        <div class="section">
+          <div class="section-title">Child Information</div>
+          <table class="print-table">
+            <tr>
+              <th>Child's Full Name</th>
+              <td>${data.childName || "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Date of Birth</th>
+              <td>${data.dob || "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Gender</th>
+              <td>${data.gender ? data.gender.charAt(0).toUpperCase() + data.gender.slice(1) : "Not provided"}</td>
+            </tr>
+          </table>
+          
+          
+        </div>
+
+        <!-- Parent/Guardian Information Section -->
+        <div class="section">
+          <div class="section-title">Parent/Guardian Information</div>
+          <table class="print-table">
+            <tr>
+              <th>Parent/Guardian Full Name</th>
+              <td>${data.parentName || "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Relationship to Child</th>
+              <td>${data.relationship ? data.relationship.charAt(0).toUpperCase() + data.relationship.slice(1).replace("-", " ") : "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Email Address</th>
+              <td>${data.email || "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Phone Number</th>
+              <td>${data.phone || "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Home Address</th>
+              <td>${data.address || "Not provided"}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="section">
+          <div class="section-title">Additional Information</div>
+          <table class="print-table">
+            <tr>
+              <th>Allergies or Medical Conditions</th>
+              <td>${data.allergies || "None specified"}</td>
+            </tr>
+            <tr>
+              <th>Emergency Contact Name & Phone</th>
+              <td>${data.emergencyContact || "Not provided"}</td>
+            </tr>
+            <tr>
+              <th>Additional Comments or Questions</th>
+              <td>${data.comments || "None provided"}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
+          <p>Application submitted on: ${new Date().toLocaleDateString()}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 
 		// Write the content to the new window
 		printWindow.document.write(content);
