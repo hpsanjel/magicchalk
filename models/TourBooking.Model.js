@@ -54,14 +54,14 @@ const tourBookingSchema = new mongoose.Schema({
 	preferredTime: {
 		type: String,
 		required: [true, "Preferred tour time is required"],
-		enum: ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM"],
+		trim: true,
 	},
 	alternateDate: {
 		type: Date,
 	},
 	alternateTime: {
 		type: String,
-		enum: ["", "9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM"],
+		trim: true,
 	},
 
 	// Additional Information
@@ -75,6 +75,15 @@ const tourBookingSchema = new mongoose.Schema({
 		type: String,
 		enum: ["pending", "confirmed", "completed", "cancelled"],
 		default: "pending",
+	},
+
+	// Confirmed Schedule (final date/time chosen by admin)
+	confirmedDate: {
+		type: Date,
+	},
+	confirmedTime: {
+		type: String,
+		trim: true,
 	},
 
 	// Metadata

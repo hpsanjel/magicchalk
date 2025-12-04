@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useActiveMenu } from "@/context/ActiveMenuContext";
+import { Toaster } from "@/components/ui/toaster";
 import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, Handshake, ArrowBigLeft, Book, Newspaper, Timer, File, User } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -84,6 +85,7 @@ export default function DashboardLayout({ children }) {
 				{/* Content Area */}
 				<main className="flex-1 overflow-x-auto overflow-y-auto bg-gray-50 p-6">{children}</main>
 			</div>
+			<Toaster />
 		</div>
 	);
 }

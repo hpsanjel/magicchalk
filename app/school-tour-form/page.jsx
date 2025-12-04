@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
@@ -7,6 +7,11 @@ const SchoolTourForm = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitSuccess, setSubmitSuccess] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
+	const [availableDates, setAvailableDates] = useState([]);
+	const [selectedPreferredDate, setSelectedPreferredDate] = useState("");
+	const [selectedAlternateDate, setSelectedAlternateDate] = useState("");
+	const [preferredTimeSlots, setPreferredTimeSlots] = useState([]);
+	const [alternateTimeSlots, setAlternateTimeSlots] = useState([]);
 	const router = useRouter();
 
 	const {
@@ -14,13 +19,69 @@ const SchoolTourForm = () => {
 		handleSubmit,
 		formState: { errors },
 		reset,
+		watch,
 	} = useForm();
+
+	// Fetch available dates on component mount
+	useEffect(() => {
+		const fetchAvailableDates = async () => {
+			try {
+				const response = await fetch("/api/availability");
+				const data = await response.json();
+				setAvailableDates(data);
+			} catch (error) {
+				console.error("Error fetching available dates:", error);
+			}
+		};
+		fetchAvailableDates();
+	}, []);
+
+	// Watch for preferred date changes
+	const watchPreferredDate = watch("preferredDate");
+	const watchAlternateDate = watch("alternateDate");
+	const watchAgreeTerms = watch("agreeTerms");
+
+	// Update available time slots when preferred date changes
+	useEffect(() => {
+		if (watchPreferredDate) {
+			setSelectedPreferredDate(watchPreferredDate);
+			const selectedAvailability = availableDates.find((avail) => {
+				const availDate = new Date(avail.date).toISOString().split("T")[0];
+				return availDate === watchPreferredDate;
+			});
+			if (selectedAvailability) {
+				const availableTimes = selectedAvailability.timeSlots.filter((slot) => !slot.isBooked).map((slot) => slot.time);
+				setPreferredTimeSlots(availableTimes);
+			} else {
+				setPreferredTimeSlots([]);
+			}
+		}
+	}, [watchPreferredDate, availableDates]);
+
+	// Update available time slots when alternate date changes
+	useEffect(() => {
+		if (watchAlternateDate) {
+			setSelectedAlternateDate(watchAlternateDate);
+			const selectedAvailability = availableDates.find((avail) => {
+				const availDate = new Date(avail.date).toISOString().split("T")[0];
+				return availDate === watchAlternateDate;
+			});
+			if (selectedAvailability) {
+				const availableTimes = selectedAvailability.timeSlots.filter((slot) => !slot.isBooked).map((slot) => slot.time);
+				setAlternateTimeSlots(availableTimes);
+			} else {
+				setAlternateTimeSlots([]);
+			}
+		}
+	}, [watchAlternateDate, availableDates]);
 
 	const onSubmit = async (data) => {
 		setIsSubmitting(true);
 		setErrorMessage("");
 
 		try {
+			console.log("Submitting tour booking data:", data);
+
 			const response = await fetch("/api/tour-bookings", {
 				method: "POST",
 				headers: {
@@ -29,8 +90,16 @@ const SchoolTourForm = () => {
 				body: JSON.stringify(data),
 			});
 
+			const result = await response.json();
+			console.log("API response:", result);
+
 			if (!response.ok) {
-				throw new Error("Failed to submit form");
+				// Handle validation errors from the API
+				if (result.errors) {
+					const errorMessages = Object.values(result.errors).join(", ");
+					throw new Error(errorMessages);
+				}
+				throw new Error(result.message || "Failed to submit form");
 			}
 
 			setSubmitSuccess(true);
@@ -40,7 +109,7 @@ const SchoolTourForm = () => {
 			}, 3000);
 		} catch (error) {
 			console.error("Error submitting form:", error);
-			setErrorMessage("There was a problem submitting your form. Please try again.");
+			setErrorMessage(error.message || "There was a problem submitting your form. Please try again.");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -172,7 +241,7 @@ const SchoolTourForm = () => {
 									<label htmlFor="childDob" className="block text-sm font-medium text-gray-700 mb-1">
 										Child&apos;s Date of Birth *
 									</label>
-									<input id="childDob" type="date" {...register("childDob", { required: "Date of birth is required" })} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" aria-invalid={errors.childDob ? "true" : "false"} />
+									<input id="childDob" type="date" max={new Date().toISOString().split("T")[0]} {...register("childDob", { required: "Date of birth is required" })} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" aria-invalid={errors.childDob ? "true" : "false"} />
 									{errors.childDob && (
 										<p className="mt-1 text-sm text-red-600" role="alert">
 											{errors.childDob.message}
@@ -196,57 +265,84 @@ const SchoolTourForm = () => {
 								<label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
 									Preferred Tour Date *
 								</label>
-								<input
+								<select
 									id="preferredDate"
-									type="date"
 									{...register("preferredDate", {
 										required: "Preferred date is required",
-										validate: (value) => new Date(value) >= new Date().setHours(0, 0, 0, 0) || "Please select a future date",
 									})}
-									min={new Date().toISOString().split("T")[0]}
 									className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
 									aria-invalid={errors.preferredDate ? "true" : "false"}
-								/>
+								>
+									<option value="">Select a date...</option>
+									{availableDates.map((avail) => {
+										const dateStr = new Date(avail.date).toISOString().split("T")[0];
+										const displayDate = new Date(avail.date).toLocaleDateString("en-US", {
+											weekday: "long",
+											year: "numeric",
+											month: "long",
+											day: "numeric",
+										});
+										return (
+											<option key={avail._id} value={dateStr}>
+												{displayDate}
+											</option>
+										);
+									})}
+								</select>
 								{errors.preferredDate && (
 									<p className="mt-1 text-sm text-red-600" role="alert">
 										{errors.preferredDate.message}
 									</p>
 								)}
+								{availableDates.length === 0 && <p className="mt-1 text-sm text-gray-500">No available dates at the moment. Please check back later.</p>}
 							</div>
 
 							<div>
 								<label htmlFor="preferredTime" className="block text-sm font-medium text-gray-700 mb-1">
 									Preferred Time *
 								</label>
-								<select id="preferredTime" {...register("preferredTime", { required: "Please select a preferred time" })} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" aria-invalid={errors.preferredTime ? "true" : "false"}>
+								<select id="preferredTime" {...register("preferredTime", { required: "Please select a preferred time" })} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" aria-invalid={errors.preferredTime ? "true" : "false"} disabled={!selectedPreferredDate || preferredTimeSlots.length === 0}>
 									<option value="">Select a time...</option>
-									<option value="9:00 AM">9:00 AM</option>
-									<option value="10:00 AM">10:00 AM</option>
-									<option value="11:00 AM">11:00 AM</option>
-									<option value="1:00 PM">1:00 PM</option>
-									<option value="2:00 PM">2:00 PM</option>
+									{preferredTimeSlots.map((time) => (
+										<option key={time} value={time}>
+											{time}
+										</option>
+									))}
 								</select>
 								{errors.preferredTime && (
 									<p className="mt-1 text-sm text-red-600" role="alert">
 										{errors.preferredTime.message}
 									</p>
 								)}
+								{selectedPreferredDate && preferredTimeSlots.length === 0 && <p className="mt-1 text-sm text-gray-500">No available time slots for this date.</p>}
 							</div>
 
 							<div>
 								<label htmlFor="alternateDate" className="block text-sm font-medium text-gray-700 mb-1">
 									Alternate Tour Date (optional)
 								</label>
-								<input
-									id="alternateDate"
-									type="date"
-									{...register("alternateDate", {
-										validate: (value) => !value || new Date(value) >= new Date().setHours(0, 0, 0, 0) || "Please select a future date",
-									})}
-									min={new Date().toISOString().split("T")[0]}
-									className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
-									aria-invalid={errors.alternateDate ? "true" : "false"}
-								/>
+								<select id="alternateDate" {...register("alternateDate")} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" aria-invalid={errors.alternateDate ? "true" : "false"}>
+									<option value="">Select a date...</option>
+									{availableDates
+										.filter((avail) => {
+											const dateStr = new Date(avail.date).toISOString().split("T")[0];
+											return dateStr !== selectedPreferredDate;
+										})
+										.map((avail) => {
+											const dateStr = new Date(avail.date).toISOString().split("T")[0];
+											const displayDate = new Date(avail.date).toLocaleDateString("en-US", {
+												weekday: "long",
+												year: "numeric",
+												month: "long",
+												day: "numeric",
+											});
+											return (
+												<option key={avail._id} value={dateStr}>
+													{displayDate}
+												</option>
+											);
+										})}
+								</select>
 								{errors.alternateDate && (
 									<p className="mt-1 text-sm text-red-600" role="alert">
 										{errors.alternateDate.message}
@@ -258,14 +354,15 @@ const SchoolTourForm = () => {
 								<label htmlFor="alternateTime" className="block text-sm font-medium text-gray-700 mb-1">
 									Alternate Time (optional)
 								</label>
-								<select id="alternateTime" {...register("alternateTime")} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500">
+								<select id="alternateTime" {...register("alternateTime")} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" disabled={!selectedAlternateDate || alternateTimeSlots.length === 0}>
 									<option value="">Select a time...</option>
-									<option value="9:00 AM">9:00 AM</option>
-									<option value="10:00 AM">10:00 AM</option>
-									<option value="11:00 AM">11:00 AM</option>
-									<option value="1:00 PM">1:00 PM</option>
-									<option value="2:00 PM">2:00 PM</option>
+									{alternateTimeSlots.map((time) => (
+										<option key={time} value={time}>
+											{time}
+										</option>
+									))}
 								</select>
+								{selectedAlternateDate && alternateTimeSlots.length === 0 && <p className="mt-1 text-sm text-gray-500">No available time slots for this date.</p>}
 							</div>
 						</div>
 
@@ -301,7 +398,7 @@ const SchoolTourForm = () => {
 						)}
 
 						<div className="flex justify-center">
-							<button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+							<button type="submit" disabled={isSubmitting || !watchAgreeTerms} className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
 								{isSubmitting ? "Submitting..." : "Book School Tour"}
 							</button>
 						</div>

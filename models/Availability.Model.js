@@ -128,8 +128,24 @@ availabilitySchema.statics.addOrUpdateAvailableDate = async function (date, time
 	});
 
 	if (existingAvailability) {
-		// Update existing record
-		existingAvailability.timeSlots = formattedTimeSlots;
+		// Merge time slots instead of replacing
+		// Get existing times to avoid duplicates
+		const existingTimes = new Set(existingAvailability.timeSlots.map((slot) => slot.time));
+
+		// Add only new time slots that don't already exist
+		formattedTimeSlots.forEach((newSlot) => {
+			if (!existingTimes.has(newSlot.time)) {
+				existingAvailability.timeSlots.push(newSlot);
+			}
+		});
+
+		// Sort time slots chronologically
+		existingAvailability.timeSlots.sort((a, b) => {
+			const timeA = convertTo24Hour(a.time);
+			const timeB = convertTo24Hour(b.time);
+			return timeA - timeB;
+		});
+
 		existingAvailability.updatedAt = new Date();
 		return await existingAvailability.save();
 	} else {
@@ -140,6 +156,21 @@ availabilitySchema.statics.addOrUpdateAvailableDate = async function (date, time
 		});
 	}
 };
+
+// Helper function to convert time string to minutes for sorting
+function convertTo24Hour(timeStr) {
+	const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+	if (!match) return 0;
+
+	let hours = parseInt(match[1]);
+	const minutes = parseInt(match[2]);
+	const period = match[3].toUpperCase();
+
+	if (period === "PM" && hours !== 12) hours += 12;
+	if (period === "AM" && hours === 12) hours = 0;
+
+	return hours * 60 + minutes;
+}
 
 // Create the model
 const Availability = mongoose.models.Availability || mongoose.model("Availability", availabilitySchema);
