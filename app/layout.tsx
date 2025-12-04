@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState } from "react";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { usePathname } from "next/navigation";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -27,6 +28,8 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const pathname = usePathname();
+	const isDashboard = pathname?.startsWith("/dashboard");
 
 	const toggleMenu = () => {
 		setIsMenuOpen((prev) => !prev);
@@ -36,12 +39,12 @@ export default function RootLayout({
 			<AuthProvider>
 				<ProfileProvider>
 					<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-						<Header isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
+						{!isDashboard && <Header isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />}
 
 						<ActiveMenuProvider>{children}</ActiveMenuProvider>
-						<GoToTopButton />
+						{!isDashboard && <GoToTopButton />}
 						<Toaster position="bottom-right" reverseOrder={false} />
-						<Footer />
+						{!isDashboard && <Footer />}
 					</body>
 				</ProfileProvider>
 			</AuthProvider>

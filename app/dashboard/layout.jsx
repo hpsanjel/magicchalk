@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActiveMenu } from "@/context/ActiveMenuContext";
 import { Toaster } from "@/components/ui/toaster";
-import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, Handshake, ArrowBigLeft, Book, Newspaper, Timer, File, User } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, Handshake, ArrowBigLeft, Book, Newspaper, Timer, File, User, LogOut } from "lucide-react";
 
 const menuItems = [
 	{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,18 +25,44 @@ const menuItems = [
 
 export default function DashboardLayout({ children }) {
 	const { activeMenu, setActiveMenu } = useActiveMenu();
-	const { data: session } = useSession();
+	const router = useRouter();
+	const [user, setUser] = useState(null);
+
+	useEffect(() => {
+		// Fetch user info from API
+		fetch("/api/auth/me")
+			.then((res) => res.json())
+			.then((data) => {
+				if (data.user) {
+					setUser(data.user);
+				}
+			})
+			.catch((err) => console.error("Failed to fetch user:", err));
+	}, []);
+
+	const handleLogout = async () => {
+		try {
+			const response = await fetch("/api/logout", {
+				method: "POST",
+			});
+			if (response.ok) {
+				router.push("/");
+			}
+		} catch (error) {
+			console.error("Logout failed:", error);
+		}
+	};
 
 	return (
-		<div className="mx-auto mb-12 flex flex-col md:flex-row">
+		<div className="mx-auto flex flex-col md:flex-row h-screen overflow-hidden">
 			{/* Sidebar */}
-			<div className="hidden md:block w-64 flex-col md:flex-row bg-slate-800 shadow-lg h-screen">
-				<div className="flex p-7">
+			<div className="hidden md:flex w-64 flex-col bg-slate-800 shadow-lg">
+				<div className="flex p-7 flex-shrink-0">
 					<Link href="/" className="flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 w-fit px-4 py-2 rounded-full">
 						<Home /> <p>Home</p>
 					</Link>
 				</div>
-				<nav className="">
+				<nav className="flex-1 overflow-y-auto no-scrollbar">
 					{menuItems.map((item) => {
 						const Icon = item.icon;
 						return (
@@ -68,22 +94,25 @@ export default function DashboardLayout({ children }) {
 
 						<h2 className="text-xl md:text-2xl font-semibold text-slate-200 sm:ml-8">{menuItems.find((item) => item.id === activeMenu)?.label}</h2>
 					</div>
-					{session && (
-						<div className="flex gap-2 items-center justify-center">
+					{user && (
+						<div className="flex gap-2 items-center justify-center mr-4">
 							<div className="flex p-1 w-10 h-10 md:w-12 md:h-12 bg-red-400 rounded-full items-center justify-center">
-								<p className="text-3xl font-bold">{session?.user?.email?.charAt(0).toUpperCase()}</p>
+								<p className="text-3xl font-bold">{user?.email?.charAt(0).toUpperCase()}</p>
 							</div>
-							<p className="text-sm mr-6 md:mr-12 font-semibold text-slate-200">
+							<p className="text-sm mr-4 font-semibold text-slate-200">
 								Welcome,
 								<br />
-								<span className="text-slate-300"> {session?.user?.email || "Guest"}!</span>
+								<span className="text-slate-300"> {user?.email || "Guest"}!</span>
 							</p>
+							<button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors duration-200 text-sm font-medium" title="Sign Out">
+								<LogOut className="w-4 h-4" />
+								<span className="hidden md:inline">Sign Out</span>
+							</button>
 						</div>
 					)}
-				</header>
-
+				</header>{" "}
 				{/* Content Area */}
-				<main className="flex-1 overflow-x-auto overflow-y-auto bg-gray-50 p-6">{children}</main>
+				<main className="flex-1 overflow-x-auto overflow-y-auto bg-gray-50 p-6 no-scrollbar">{children}</main>
 			</div>
 			<Toaster />
 		</div>

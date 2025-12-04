@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Facebook, Instagram, Menu, Search, X, ChevronDown } from "lucide-react";
+import { Facebook, Instagram, Menu, Search, X, ChevronDown, User, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import SearchModal from "@/components/SearchModal";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 interface HeaderProps {
 	isMenuOpen: boolean;
@@ -66,8 +67,10 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+	const [showUserDropdown, setShowUserDropdown] = useState(false);
 	const pathname = usePathname();
 	const headerRef = useRef<HTMLDivElement>(null);
+	const { data: session } = useSession();
 
 	const openModal = () => setIsModalOpen(true);
 	const closeModal = () => setIsModalOpen(false);
@@ -77,6 +80,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
 				setActiveDropdown(null);
+				setShowUserDropdown(false);
 			}
 		};
 
@@ -97,6 +101,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 	// Close dropdown when route changes
 	useEffect(() => {
 		setActiveDropdown(null);
+		setShowUserDropdown(false);
 	}, [pathname]);
 
 	const navItems = [
@@ -152,6 +157,9 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 		if (activeDropdown) {
 			setActiveDropdown(null);
 		}
+		if (showUserDropdown) {
+			setShowUserDropdown(false);
+		}
 	};
 
 	return (
@@ -171,7 +179,6 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 
 				<div className="flex gap-4 md:gap-6 items-center">
 					{isModalOpen && <SearchModal closeModal={closeModal} />}
-
 					<button
 						onClick={(e) => {
 							e.stopPropagation(); // Prevent event from closing dropdowns
@@ -184,19 +191,55 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 							<Search />
 						</span>
 					</button>
-
 					<Link href="https://www.facebook.com/Magicchalk2023" className={`border-b border-transparent hover:border-b hover:scale-110 transition-transform duration-200 ${isScrolled ? "text-black" : "text-white hover:text-slate-100"}`} aria-label="Facebook" onClick={() => setActiveDropdown(null)}>
 						<Facebook />
 					</Link>
-
 					<Link href="https://www.instagram.com/magic_chalk_edu/" className={`border-b border-transparent hover:border-b hover:scale-110 transition-transform duration-200 ${isScrolled ? "text-black" : "text-white hover:text-slate-100"}`} aria-label="Instagram" onClick={() => setActiveDropdown(null)}>
 						<Instagram />
 					</Link>
+					{session ? (
+						<div className="relative">
+							<button
+								onClick={(e) => {
+									e.stopPropagation();
+									setShowUserDropdown(!showUserDropdown);
+									setActiveDropdown(null);
+								}}
+								className={`flex items-center gap-2 px-4 py-2 rounded-full ${isScrolled ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-white/20 text-white hover:bg-white/30"} transition-colors duration-200`}
+							>
+								<div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold">{session.user?.email?.charAt(0).toUpperCase()}</div>
+								<span className="hidden md:inline font-medium">{session.user?.email?.split("@")[0]}</span>
+								<ChevronDown size={16} className={showUserDropdown ? "transform rotate-180 transition-transform" : "transition-transform"} />
+							</button>
 
-					<Link href="/dashboard" className={`px-4 py-2 rounded-md bg-yellow-400 text-green-800 font-medium hover:bg-yellow-500 transition-colors duration-200`} onClick={() => setActiveDropdown(null)}>
-						Login
-					</Link>
-
+							{showUserDropdown && (
+								<div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
+									<div className="px-4 py-3 border-b border-gray-100">
+										<p className="text-sm font-semibold text-gray-900">{session.user?.email}</p>
+										<p className="text-xs text-gray-500 mt-1">Administrator</p>
+									</div>
+									<Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setShowUserDropdown(false)}>
+										<User size={16} />
+										Dashboard
+									</Link>
+									<button
+										onClick={() => {
+											setShowUserDropdown(false);
+											signOut({ callbackUrl: "/" });
+										}}
+										className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+									>
+										<LogOut size={16} />
+										Sign Out
+									</button>
+								</div>
+							)}
+						</div>
+					) : (
+						<Link href="/dashboard" className={`px-4 py-2 rounded-md bg-yellow-400 text-green-800 font-medium hover:bg-yellow-500 transition-colors duration-200`} onClick={() => setActiveDropdown(null)}>
+							Login
+						</Link>
+					)}{" "}
 					<div
 						className="md:hidden cursor-pointer ml-4"
 						onClick={(e) => {

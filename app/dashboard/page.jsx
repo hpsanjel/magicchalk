@@ -10,7 +10,7 @@ export default function DashboardGrid() {
 		{ name: "Hero", icon: Calendar, href: "/dashboard/hero", id: "hero", color: "bg-blue-900" },
 		{ name: "Contact Messages", icon: Book, href: "/dashboard/contactmessages", id: "contactmessages", color: "bg-red-900" },
 		{ name: "Appointments", icon: Book, href: "/dashboard/appointments", id: "appointments", color: "bg-green-900" },
-		{ name: "Admissions", icon: Book, href: "/dashboard/admission", id: "admissions", color: "bg-red-700" },
+		{ name: "Admissions", icon: Book, href: "/dashboard/admissions", id: "admissions", color: "bg-red-700" },
 		{ name: "Events", icon: Calendar, href: "/dashboard/events", id: "events", color: "bg-purple-500" },
 		{ name: "Blogs", icon: Newspaper, href: "/dashboard/blogs", id: "blogs", color: "bg-orange-700" },
 		{ name: "Testimonials", icon: MessageSquare, href: "/dashboard/testimonials", id: "testimonials", color: "bg-yellow-800" },
