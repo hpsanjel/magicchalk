@@ -44,7 +44,6 @@ export async function POST(req) {
 		console.log("Database connected successfully");
 
 		const body = await req.json();
-		console.log("Received tour booking data:", body);
 
 		const { parentFirstName, parentLastName, email, phone, childFirstName, childLastName, childDob, preferredDate, preferredTime } = body;
 

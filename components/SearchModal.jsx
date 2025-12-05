@@ -15,9 +15,9 @@ export default function SearchModal({ closeModal }) {
 
 	const handleSearch = (e) => {
 		e.preventDefault();
-		closeModal();
-		if (typeof window !== "undefined") {
-			router.push(`/programs?query=${encodeURIComponent(searchQuery)}`);
+		if (searchQuery.trim()) {
+			closeModal();
+			router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
 		}
 	};
 
@@ -27,8 +27,8 @@ export default function SearchModal({ closeModal }) {
 				✕
 			</button>
 			<form onSubmit={handleSearch} className="max-w-4xl flex items-center gap-4">
-				<input type="text" ref={searchInputRef} className="border-b border-red-700 bg-transparent p-8 text-2xl md:text-6xl text-white focus:outline-none" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} required />
-				<button type="submit" className=" bg-red-700 rounded-full w-fit p-4 ">
+				<input type="text" ref={searchInputRef} className="border-b border-green-700 bg-transparent p-8 text-2xl md:text-6xl text-white focus:outline-none" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} required />
+				<button type="submit" className=" bg-green-700 rounded-full w-fit p-4 ">
 					<Search className="text-white w-12 h-12" />
 				</button>
 			</form>

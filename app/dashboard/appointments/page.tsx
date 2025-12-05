@@ -7,10 +7,6 @@ import useFetchData from "@/hooks/useFetchData";
 export default function AdminPage() {
 	const { data: tourBookings, loading, error, mutate } = useFetchData("/api/tour-bookings");
 
-	console.log("Tour bookings data:", tourBookings);
-	console.log("Loading:", loading);
-	console.log("Error:", error);
-
 	return (
 		<div className="container mx-auto px-4 py-8">
 			{/* <h1 className="text-3xl font-bold mb-2">School Tour Appointments</h1>

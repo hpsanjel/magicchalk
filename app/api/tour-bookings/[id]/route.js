@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
-import TourBooking from "@/models/TourBooking";
+import TourBooking from "@/models/TourBooking.Model";
 import mongoose from "mongoose";
 
 // Ensure database connection

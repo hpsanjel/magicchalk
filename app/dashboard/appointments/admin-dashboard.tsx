@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useMemo } from "react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar as CalendarIcon, Clock, Mail, Phone, User, Baby, School, MessageSquare, AlertCircle, Trash2, CheckCircle, Search, Download, FileText, Printer } from "lucide-react";
-import type { Appointment } from "@/lib/models";
 import { addAvailableDate } from "@/lib/actions-mongoose"; // Updated import to use Mongoose actions
 
 interface AdminDashboardProps {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	appointments: any[]; // Changed from Appointment[] to any[] to accept TourBooking data
 	onRefresh?: () => void; // Callback to refresh data
 }
@@ -31,11 +31,11 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const [processingId, setProcessingId] = useState<string | null>(null);
 	const [timeError, setTimeError] = useState("");
 	const [existingSlots, setExistingSlots] = useState<string[]>([]);
-	const [isLoadingExisting, setIsLoadingExisting] = useState(false);
 
 	// Modal states
 	const [showDateSelectionModal, setShowDateSelectionModal] = useState(false);
 	const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [selectedBooking, setSelectedBooking] = useState<any>(null);
 	const [selectedDateOption, setSelectedDateOption] = useState<"preferred" | "alternate">("preferred");
 
@@ -45,8 +45,6 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
-
-	console.log("School Tour Bookings data:", appointments); // Debug log
 
 	// Filter and search appointments
 	const filteredAppointments = useMemo(() => {
@@ -81,7 +79,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 				default:
 					return filtered;
 			}
-
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			filtered = filtered.filter((booking: any) => {
 				const bookingDate = new Date(booking.preferredDate);
 				return isWithinInterval(bookingDate, { start, end });
@@ -91,6 +89,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		// Apply search filter
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			filtered = filtered.filter((booking: any) => {
 				const searchText = `${booking.parentFirstName} ${booking.parentLastName} ${booking.childFirstName} ${booking.childLastName} ${booking.email} ${booking.phone} ${booking.status}`.toLowerCase();
 				return searchText.includes(query);
@@ -104,6 +103,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const exportToCSV = () => {
 		const headers = ["Parent Name", "Email", "Phone", "Child Name", "Child DOB", "Tour Date", "Tour Time", "Alternate Date", "Alternate Time", "Status", "Questions", "Submitted Date"];
 
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const rows = filteredAppointments.map((booking: any) => [`${booking.parentFirstName} ${booking.parentLastName}`, booking.email, booking.phone, `${booking.childFirstName} ${booking.childLastName}`, formatAppointmentDate(booking.childDob), booking.confirmedDate ? `${formatAppointmentDate(booking.confirmedDate)} (Confirmed)` : formatAppointmentDate(booking.preferredDate), booking.confirmedTime || booking.preferredTime, booking.alternateDate ? formatAppointmentDate(booking.alternateDate) : "N/A", booking.alternateTime || "N/A", booking.status, booking.questions || "N/A", formatAppointmentDate(booking.createdAt)]);
 
 		const csvContent = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
@@ -166,6 +166,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 					<tbody>
 						${filteredAppointments
 							.map(
+								// eslint-disable-next-line @typescript-eslint/no-explicit-any
 								(booking: any) => `
 							<tr>
 								<td>${booking.parentFirstName} ${booking.parentLastName}</td>
@@ -198,18 +199,19 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 
 	// Load existing time slots when date is selected
 	const loadExistingTimeSlots = async (selectedDate: Date) => {
-		setIsLoadingExisting(true);
 		try {
 			const dateStr = selectedDate.toISOString().split("T")[0];
 			const response = await fetch("/api/availability");
 			const availabilities = await response.json();
 
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const existing = availabilities.find((avail: any) => {
 				const availDate = new Date(avail.date).toISOString().split("T")[0];
 				return availDate === dateStr;
 			});
 
 			if (existing && existing.timeSlots) {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				const existingTimes = existing.timeSlots.map((slot: any) => slot.time);
 				setExistingSlots(existingTimes);
 				// Merge existing slots with current selection
@@ -218,10 +220,8 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 			} else {
 				setExistingSlots([]);
 			}
-		} catch (error) {
-			console.error("Error loading existing time slots:", error);
-		} finally {
-			setIsLoadingExisting(false);
+		} catch {
+			console.error("Error loading existing time slots:");
 		}
 	};
 
@@ -344,7 +344,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const formatAppointmentDate = (date: Date) => {
 		try {
 			return format(new Date(date), "MMM d, yyyy");
-		} catch (error) {
+		} catch {
 			return "Invalid date";
 		}
 	};
@@ -382,6 +382,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	};
 
 	// Confirm booking
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleConfirm = async (bookingId: string, booking: any) => {
 		setSelectedBooking(booking);
 
@@ -632,6 +633,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 
 					{filteredAppointments.length > 0 ? (
 						<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+							{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
 							{filteredAppointments.map((booking: any) => (
 								<Card key={booking._id} className="hover:shadow-lg transition-shadow">
 									{/* Status Bar at Top */}
@@ -874,11 +876,10 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 									<li>
 										Times must be between <strong>07:00 AM</strong> and <strong>07:00 PM</strong>
 									</li>
-									<li>Click "Add Slot" to add each time</li>
+									<li>Click &quot;Add Slot&quot; to add each time</li>
 									<li>Remove unwanted slots by clicking the × button</li>
-									<li>Click "Save" to make these times available for booking</li>
-								</ol>
-
+									<li>Click &quot;Save&quot; to make these times available for booking</li>
+								</ol>{" "}
 								<div className="mt-4 p-3 bg-blue-50 rounded-lg">
 									<p className="text-sm font-semibold text-blue-800 mb-2">Examples of valid times:</p>
 									<ul className="text-xs text-blue-700 space-y-1">
@@ -890,7 +891,6 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 										<li>✗ 08:00 PM (after 7:00 PM)</li>
 									</ul>
 								</div>
-
 								<p className="text-xs text-gray-500 mt-4">
 									<strong>Note:</strong> Parents will only be able to select dates and times that you make available here.
 								</p>

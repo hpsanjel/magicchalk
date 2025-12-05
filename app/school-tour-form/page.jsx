@@ -80,8 +80,6 @@ const SchoolTourForm = () => {
 		setErrorMessage("");
 
 		try {
-			console.log("Submitting tour booking data:", data);
-
 			const response = await fetch("/api/tour-bookings", {
 				method: "POST",
 				headers: {

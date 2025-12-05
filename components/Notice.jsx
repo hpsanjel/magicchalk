@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import useFetchData from "@/hooks/useFetchData";
@@ -14,22 +14,11 @@ export default function Notices() {
 	const isDetailPage = !!selectedNotice;
 
 	// For detail page: remaining notices (excluding selected one)
-	const remainingNotices = isDetailPage ? sortedNotices.filter((notice) => notice.id !== selectedNoticeId) : [];
+	const remainingNotices = isDetailPage ? sortedNotices.filter((notice) => notice.id !== selectedNoticeId).slice(0, 3) : [];
 
 	// For main page: latest and other notices
 	const latestNotice = !isDetailPage ? sortedNotices[0] : null;
-	const otherNotices = !isDetailPage ? sortedNotices.slice(1) : [];
-
-	const [showAll, setShowAll] = useState(false);
-	const scrollRef = useRef(null);
-	const [isScrollable, setIsScrollable] = useState(false);
-
-	useEffect(() => {
-		const el = scrollRef.current;
-		if (el) {
-			setIsScrollable(el.scrollHeight > el.clientHeight);
-		}
-	}, [otherNotices, remainingNotices, showAll]);
+	const otherNotices = !isDetailPage ? sortedNotices.slice(1).slice(0, 3) : [];
 
 	const formatDate = (dateString) => {
 		try {
@@ -39,7 +28,7 @@ export default function Notices() {
 				month: "long",
 				day: "numeric",
 			});
-		} catch (error) {
+		} catch {
 			return dateString;
 		}
 	};
@@ -117,60 +106,31 @@ export default function Notices() {
 									Other Notices
 								</h3>
 
-								<div className={`relative ${showAll ? "" : "max-h-[600px]"} overflow-y-auto pr-2 transition-all duration-300`} ref={scrollRef}>
-									{!showAll && isScrollable && <div className="absolute top-0 left-0 w-full h-6 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />}
+								<div className="space-y-4">
+									{remainingNotices.length > 0 ? (
+										remainingNotices.map((notice, index) => (
+											<Card key={notice.id || index} className="shadow-md hover:shadow-lg border-none bg-white transition-all duration-300 cursor-pointer hover:-translate-y-1" onClick={() => handleReadMore(notice)}>
+												<div className="bg-green-500 h-1" />
+												<CardContent className="p-4">
+													<div className="flex items-center gap-2 mb-3">
+														<svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+														</svg>
+														<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
+													</div>
 
-									<div className="space-y-4 relative z-0">
-										{remainingNotices.length > 0 ? (
-											remainingNotices.map((notice, index) => (
-												<Card key={notice.id || index} className="shadow-md hover:shadow-lg border-none bg-white transition-all duration-300 cursor-pointer hover:-translate-y-1" onClick={() => handleReadMore(notice)}>
-													<div className="bg-green-500 h-1" />
-													<CardContent className="p-4">
-														<div className="flex items-center gap-2 mb-3">
-															<svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-															</svg>
-															<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
-														</div>
+													<h4 className="text-md font-bold text-gray-800 mb-2 line-clamp-2 leading-tight">{notice.noticetitle}</h4>
 
-														<h4 className="text-md font-bold text-gray-800 mb-2 line-clamp-2 leading-tight">{notice.noticetitle}</h4>
-
-														<p className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-3">{notice.notice}</p>
-
-														<div className="pt-2 border-t border-gray-100">
-															<button
-																className="text-green-600 text-sm font-medium hover:text-green-700 inline-flex items-center transition-colors duration-200"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleReadMore(notice);
-																}}
-															>
-																Read more
-																<svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																	<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-																</svg>
-															</button>
-														</div>
-													</CardContent>
-												</Card>
-											))
-										) : (
-											<div className="text-center py-8">
-												<p className="text-gray-500">No other notices available</p>
-											</div>
-										)}
-									</div>
-
-									{!showAll && isScrollable && <div className="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />}
+													<p className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-3">{notice.notice}</p>
+												</CardContent>
+											</Card>
+										))
+									) : (
+										<div className="text-center py-8">
+											<p className="text-gray-500">No other notices available</p>
+										</div>
+									)}
 								</div>
-
-								{isScrollable && (
-									<div className="text-center">
-										<button className="text-green-600 hover:text-green-800 text-sm font-semibold" onClick={() => setShowAll(!showAll)}>
-											{showAll ? "Show Less" : "Show More"}
-										</button>
-									</div>
-								)}
 							</div>
 						</div>
 					</div>
@@ -251,60 +211,46 @@ export default function Notices() {
 									Other Notices
 								</h3>
 
-								<div className={`relative ${showAll ? "" : "max-h-[400px]"} overflow-y-auto pr-2 transition-all duration-300`} ref={scrollRef}>
-									{!showAll && isScrollable && <div className="absolute top-0 left-0 w-full h-6 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />}
+								<div className="space-y-4">
+									{otherNotices.length > 0 ? (
+										otherNotices.map((notice, index) => (
+											<Card key={notice.id || index} className="shadow-md hover:shadow-lg border-none bg-white transition-all duration-300 cursor-pointer hover:-translate-y-1" onClick={() => handleReadMore(notice)}>
+												<div className="bg-green-500 h-1" />
+												<CardContent className="p-5">
+													<div className="flex items-center gap-2 mb-3">
+														<svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+														</svg>
+														<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
+													</div>
 
-									<div className="space-y-4 relative z-0">
-										{otherNotices.length > 0 ? (
-											otherNotices.map((notice, index) => (
-												<Card key={notice.id || index} className="shadow-md hover:shadow-lg border-none bg-white transition-all duration-300 cursor-pointer hover:-translate-y-1" onClick={() => handleReadMore(notice)}>
-													<div className="bg-green-500 h-1" />
-													<CardContent className="p-5">
-														<div className="flex items-center gap-2 mb-3">
-															<svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+													<h4 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 leading-tight">{notice.noticetitle}</h4>
+
+													<p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{notice.notice}</p>
+
+													<div className="mt-4 pt-3 border-t border-gray-100">
+														<button
+															className="text-green-600 text-sm font-medium hover:text-green-700 inline-flex items-center transition-colors duration-200"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleReadMore(notice);
+															}}
+														>
+															Read more
+															<svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
 															</svg>
-															<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
-														</div>
-
-														<h4 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 leading-tight">{notice.noticetitle}</h4>
-
-														<p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{notice.notice}</p>
-
-														<div className="mt-4 pt-3 border-t border-gray-100">
-															<button
-																className="text-green-600 text-sm font-medium hover:text-green-700 inline-flex items-center transition-colors duration-200"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleReadMore(notice);
-																}}
-															>
-																Read more
-																<svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																	<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-																</svg>
-															</button>
-														</div>
-													</CardContent>
-												</Card>
-											))
-										) : (
-											<div className="text-center py-8">
-												<p className="text-gray-500">No other notices available</p>
-											</div>
-										)}
-									</div>
-
-									{!showAll && isScrollable && <div className="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />}
+														</button>
+													</div>
+												</CardContent>
+											</Card>
+										))
+									) : (
+										<div className="text-center py-8">
+											<p className="text-gray-500">No other notices available</p>
+										</div>
+									)}
 								</div>
-
-								{isScrollable && (
-									<div className="text-center">
-										<button className="text-green-600 hover:text-green-800 text-sm font-semibold" onClick={() => setShowAll(!showAll)}>
-											{showAll ? "Show Less" : "Show More"}
-										</button>
-									</div>
-								)}
 							</div>
 						</div>
 					</div>

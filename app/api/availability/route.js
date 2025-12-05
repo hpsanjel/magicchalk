@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Availability from "@/models/Availability.Model";
 
 // GET - Retrieve all available dates with time slots
-export async function GET(req) {
+export async function GET() {
 	try {
 		await connectDB();
 
