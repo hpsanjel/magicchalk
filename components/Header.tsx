@@ -131,7 +131,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 			title: "School Life",
 			href: "/school-life",
 			dropdownItems: [
-				{ title: "Events and Notices", href: "#" },
+				{ title: "Events and Notices", href: "/events-notices" },
 				{ title: "Gallery", href: "/gallery" },
 			],
 		},
@@ -146,7 +146,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 		{ title: "Explore Programs", href: "/programs" },
 		{ title: "Enroll Now", href: "/admission" },
 		{ title: "Book School Tour", href: "/school-tour-form" },
-		{ title: "Events and Notices", href: "#" },
+		{ title: "Events and Notices", href: "/events-notices" },
 		{ title: "Gallery", href: "/gallery" },
 		{ title: "Blog", href: "/blogs" },
 		{ title: "Contact Us", href: "/contact" },

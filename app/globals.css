@@ -88,3 +88,29 @@ body {
 		transform: translateX(-100%);
 	}
 }
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-fadeIn {
+	animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Add padding-top to pages to account for fixed header */
+.page-with-header {
+	padding-top: 6rem; /* 96px - accounts for header height */
+}
+
+@media (min-width: 768px) {
+	.page-with-header {
+		padding-top: 8rem; /* 128px - larger header on desktop */
+	}
+}

@@ -12,6 +12,7 @@ const SchoolTourForm = () => {
 	const [selectedAlternateDate, setSelectedAlternateDate] = useState("");
 	const [preferredTimeSlots, setPreferredTimeSlots] = useState([]);
 	const [alternateTimeSlots, setAlternateTimeSlots] = useState([]);
+	const [confirmedBookings, setConfirmedBookings] = useState([]);
 	const router = useRouter();
 
 	const {
@@ -22,18 +23,22 @@ const SchoolTourForm = () => {
 		watch,
 	} = useForm();
 
-	// Fetch available dates on component mount
+	// Fetch available dates and confirmed bookings on component mount
 	useEffect(() => {
-		const fetchAvailableDates = async () => {
+		const fetchData = async () => {
 			try {
-				const response = await fetch("/api/availability");
-				const data = await response.json();
-				setAvailableDates(data);
+				const [availabilityResponse, bookingsResponse] = await Promise.all([fetch("/api/availability"), fetch("/api/tour-bookings?status=confirmed")]);
+				const availabilityData = await availabilityResponse.json();
+				const bookingsData = await bookingsResponse.json();
+				console.log("Availability data:", availabilityData);
+				console.log("Bookings data:", bookingsData);
+				setAvailableDates(availabilityData);
+				setConfirmedBookings(bookingsData);
 			} catch (error) {
-				console.error("Error fetching available dates:", error);
+				console.error("Error fetching data:", error);
 			}
 		};
-		fetchAvailableDates();
+		fetchData();
 	}, []);
 
 	// Watch for preferred date changes
@@ -46,34 +51,61 @@ const SchoolTourForm = () => {
 		if (watchPreferredDate) {
 			setSelectedPreferredDate(watchPreferredDate);
 			const selectedAvailability = availableDates.find((avail) => {
-				const availDate = new Date(avail.date).toISOString().split("T")[0];
+				const availDate = new Date(avail.date + "T00:00:00Z").toISOString().split("T")[0];
 				return availDate === watchPreferredDate;
 			});
 			if (selectedAvailability) {
-				const availableTimes = selectedAvailability.timeSlots.filter((slot) => !slot.isBooked).map((slot) => slot.time);
+				// Filter out times that are already confirmed by other bookings
+				const confirmedTimes = confirmedBookings
+					.filter((booking) => {
+						const bookingDate = booking.confirmedDate || booking.preferredDate;
+						const dateStr = new Date(bookingDate + "T00:00:00Z").toISOString().split("T")[0];
+						return dateStr === watchPreferredDate;
+					})
+					.map((booking) => booking.confirmedTime || booking.preferredTime);
+
+				const availableTimes = selectedAvailability.timeSlots.filter((slot) => !slot.isBooked && !confirmedTimes.includes(slot.time)).map((slot) => slot.time);
 				setPreferredTimeSlots(availableTimes);
 			} else {
 				setPreferredTimeSlots([]);
 			}
 		}
-	}, [watchPreferredDate, availableDates]);
+	}, [watchPreferredDate, availableDates, confirmedBookings]);
+
+	// Watch for preferred time to exclude it from alternate times if same date
+	const watchPreferredTime = watch("preferredTime");
 
 	// Update available time slots when alternate date changes
 	useEffect(() => {
 		if (watchAlternateDate) {
 			setSelectedAlternateDate(watchAlternateDate);
 			const selectedAvailability = availableDates.find((avail) => {
-				const availDate = new Date(avail.date).toISOString().split("T")[0];
+				const availDate = new Date(avail.date + "T00:00:00Z").toISOString().split("T")[0];
 				return availDate === watchAlternateDate;
 			});
 			if (selectedAvailability) {
-				const availableTimes = selectedAvailability.timeSlots.filter((slot) => !slot.isBooked).map((slot) => slot.time);
+				// Filter out times that are already confirmed by other bookings
+				const confirmedTimes = confirmedBookings
+					.filter((booking) => {
+						const bookingDate = booking.confirmedDate || booking.preferredDate;
+						const dateStr = new Date(bookingDate + "T00:00:00Z").toISOString().split("T")[0];
+						return dateStr === watchAlternateDate;
+					})
+					.map((booking) => booking.confirmedTime || booking.preferredTime);
+
+				let availableTimes = selectedAvailability.timeSlots.filter((slot) => !slot.isBooked && !confirmedTimes.includes(slot.time)).map((slot) => slot.time);
+
+				// If alternate date is same as preferred date, exclude the preferred time
+				if (watchAlternateDate === watchPreferredDate && watchPreferredTime) {
+					availableTimes = availableTimes.filter((time) => time !== watchPreferredTime);
+				}
+
 				setAlternateTimeSlots(availableTimes);
 			} else {
 				setAlternateTimeSlots([]);
 			}
 		}
-	}, [watchAlternateDate, availableDates]);
+	}, [watchAlternateDate, watchPreferredDate, watchPreferredTime, availableDates, confirmedBookings]);
 
 	const onSubmit = async (data) => {
 		setIsSubmitting(true);
@@ -273,18 +305,26 @@ const SchoolTourForm = () => {
 								>
 									<option value="">Select a date...</option>
 									{availableDates.map((avail) => {
-										const dateStr = new Date(avail.date).toISOString().split("T")[0];
-										const displayDate = new Date(avail.date).toLocaleDateString("en-US", {
-											weekday: "long",
-											year: "numeric",
-											month: "long",
-											day: "numeric",
-										});
-										return (
-											<option key={avail._id} value={dateStr}>
-												{displayDate}
-											</option>
-										);
+										if (!avail.date) return null;
+										try {
+											const date = new Date(avail.date + "T00:00:00Z");
+											if (isNaN(date.getTime())) return null;
+											const dateStr = date.toISOString().split("T")[0];
+											const displayDate = date.toLocaleDateString("en-US", {
+												weekday: "long",
+												year: "numeric",
+												month: "long",
+												day: "numeric",
+												timeZone: "UTC",
+											});
+											return (
+												<option key={avail._id} value={dateStr}>
+													{displayDate}
+												</option>
+											);
+										} catch {
+											return null;
+										}
 									})}
 								</select>
 								{errors.preferredDate && (
@@ -321,25 +361,28 @@ const SchoolTourForm = () => {
 								</label>
 								<select id="alternateDate" {...register("alternateDate")} className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500" aria-invalid={errors.alternateDate ? "true" : "false"}>
 									<option value="">Select a date...</option>
-									{availableDates
-										.filter((avail) => {
-											const dateStr = new Date(avail.date).toISOString().split("T")[0];
-											return dateStr !== selectedPreferredDate;
-										})
-										.map((avail) => {
-											const dateStr = new Date(avail.date).toISOString().split("T")[0];
-											const displayDate = new Date(avail.date).toLocaleDateString("en-US", {
+									{availableDates.map((avail) => {
+										if (!avail.date) return null;
+										try {
+											const date = new Date(avail.date + "T00:00:00Z");
+											if (isNaN(date.getTime())) return null;
+											const dateStr = date.toISOString().split("T")[0];
+											const displayDate = date.toLocaleDateString("en-US", {
 												weekday: "long",
 												year: "numeric",
 												month: "long",
 												day: "numeric",
+												timeZone: "UTC",
 											});
 											return (
 												<option key={avail._id} value={dateStr}>
 													{displayDate}
 												</option>
 											);
-										})}
+										} catch {
+											return null;
+										}
+									})}
 								</select>
 								{errors.alternateDate && (
 									<p className="mt-1 text-sm text-red-600" role="alert">

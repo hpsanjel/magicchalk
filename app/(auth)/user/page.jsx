@@ -58,7 +58,12 @@ export default function AuthForm() {
 			const result = await response.json();
 			console.log(result);
 			if (result.success) {
-				router.push("/dashboard");
+				// Use window.location for production compatibility
+				if (typeof window !== "undefined") {
+					window.location.href = "/dashboard";
+				} else {
+					router.push("/dashboard");
+				}
 			} else {
 				setError(result.message || "Please use correct user credentials");
 			}

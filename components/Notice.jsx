@@ -64,8 +64,8 @@ export default function Notices() {
 
 								{/* Notice Image */}
 								<div className="relative h-64 md:h-96 bg-gradient-to-br from-green-100 to-green-200">
-									{selectedNotice.image ? (
-										<Image src={selectedNotice.image} alt={selectedNotice.noticetitle} fill className="object-cover" />
+									{selectedNotice.noticeimage ? (
+										<Image src={selectedNotice.noticeimage} alt={selectedNotice.noticetitle} fill className="object-cover" />
 									) : (
 										<div className="flex items-center justify-center h-full">
 											<div className="text-center">
@@ -160,8 +160,8 @@ export default function Notices() {
 									<div className="bg-gradient-to-r from-green-500 to-green-600 h-2" />
 
 									<div className="relative h-64 md:h-80 bg-gradient-to-br from-green-100 to-green-200">
-										{latestNotice.image ? (
-											<Image src={latestNotice.image} alt={latestNotice.noticetitle} fill className="object-cover" />
+										{latestNotice.noticeimage ? (
+											<Image src={latestNotice.noticeimage} alt={latestNotice.noticetitle} fill className="object-cover" />
 										) : (
 											<div className="flex items-center justify-center h-full">
 												<div className="text-center">
