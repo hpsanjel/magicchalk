@@ -73,8 +73,19 @@ const tourBookingSchema = new mongoose.Schema({
 	// Status
 	status: {
 		type: String,
-		enum: ["pending", "confirmed", "completed", "cancelled"],
+		enum: ["pending", "confirmed", "completed", "cancelled", "no-show"],
 		default: "pending",
+	},
+
+	// Flag to indicate if the booking has been rescheduled after initial confirmation
+	rescheduled: {
+		type: Boolean,
+		default: false,
+	},
+
+	noShowAt: {
+		type: Date,
+		default: null,
 	},
 
 	// Confirmed Schedule (final date/time chosen by admin)

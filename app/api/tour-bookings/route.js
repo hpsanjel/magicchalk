@@ -80,17 +80,33 @@ export async function PATCH(req) {
 	try {
 		await connectDB();
 		const body = await req.json();
-		const { id, status, confirmedDate, confirmedTime } = body;
+		const { id, status, confirmedDate, confirmedTime, noShowAt } = body;
 
 		if (!id || !status) {
 			return NextResponse.json({ message: "Missing id or status" }, { status: 400 });
 		}
 
+		const existingBooking = await TourBooking.findById(id);
+
+		if (!existingBooking) {
+			return NextResponse.json({ message: "Booking not found" }, { status: 404 });
+		}
+
+		const hasExistingSchedule = Boolean(existingBooking.confirmedDate || existingBooking.confirmedTime);
+		const dateChanged = hasExistingSchedule && existingBooking.confirmedDate && confirmedDate && new Date(confirmedDate).getTime() !== new Date(existingBooking.confirmedDate).getTime();
+		const timeChanged = hasExistingSchedule && existingBooking.confirmedTime && confirmedTime && confirmedTime !== existingBooking.confirmedTime;
+		const isReschedule = status === "confirmed" && hasExistingSchedule && (dateChanged || timeChanged);
+
 		// Prepare update data
 		const updateData = {
 			status,
 			updatedAt: new Date(),
+			rescheduled: isReschedule ? true : existingBooking.rescheduled || false,
 		};
+
+		if (status === "no-show") {
+			updateData.noShowAt = noShowAt || new Date();
+		}
 
 		// Add confirmed date/time if provided
 		if (confirmedDate && confirmedTime) {
@@ -99,10 +115,6 @@ export async function PATCH(req) {
 		}
 
 		const updatedBooking = await TourBooking.findByIdAndUpdate(id, updateData, { new: true });
-
-		if (!updatedBooking) {
-			return NextResponse.json({ message: "Booking not found" }, { status: 404 });
-		}
 
 		console.log("Tour booking updated:", updatedBooking._id);
 
@@ -130,6 +142,9 @@ export async function PATCH(req) {
 					confirmedDate: updatedBooking.confirmedDate ? formattedDate : undefined,
 					confirmedTime: updatedBooking.confirmedTime,
 					phone: updatedBooking.phone,
+					isReschedule,
+					previousDate: isReschedule ? existingBooking.confirmedDate || existingBooking.preferredDate : undefined,
+					previousTime: isReschedule ? existingBooking.confirmedTime || existingBooking.preferredTime : undefined,
 				});
 				console.log("Confirmation email sent successfully");
 			} catch (emailError) {

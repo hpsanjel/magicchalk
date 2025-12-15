@@ -50,10 +50,10 @@ const availabilitySchema = new mongoose.Schema({
 
 // Add a pre-save hook to ensure date is set to midnight (00:00:00)
 availabilitySchema.pre("save", function (next) {
-	// Set the time to midnight (00:00:00)
+	// Normalize to midnight UTC to avoid timezone shifts
 	if (this.date) {
 		const date = new Date(this.date);
-		date.setHours(0, 0, 0, 0);
+		date.setUTCHours(0, 0, 0, 0);
 		this.date = date;
 	}
 
@@ -66,10 +66,10 @@ availabilitySchema.pre("save", function (next) {
 // Add a method to check if a specific date has available time slots
 availabilitySchema.statics.hasAvailableTimeSlots = async function (date) {
 	const startOfDay = new Date(date);
-	startOfDay.setHours(0, 0, 0, 0);
+	startOfDay.setUTCHours(0, 0, 0, 0);
 
 	const endOfDay = new Date(date);
-	endOfDay.setHours(23, 59, 59, 999);
+	endOfDay.setUTCHours(23, 59, 59, 999);
 
 	const availability = await this.findOne({
 		date: {
@@ -85,10 +85,10 @@ availabilitySchema.statics.hasAvailableTimeSlots = async function (date) {
 // Add a method to get available time slots for a specific date
 availabilitySchema.statics.getAvailableTimeSlots = async function (date) {
 	const startOfDay = new Date(date);
-	startOfDay.setHours(0, 0, 0, 0);
+	startOfDay.setUTCHours(0, 0, 0, 0);
 
 	const endOfDay = new Date(date);
-	endOfDay.setHours(23, 59, 59, 999);
+	endOfDay.setUTCHours(23, 59, 59, 999);
 
 	const availability = await this.findOne({
 		date: {
@@ -108,10 +108,10 @@ availabilitySchema.statics.getAvailableTimeSlots = async function (date) {
 // Add a method to add or update available date with time slots
 availabilitySchema.statics.addOrUpdateAvailableDate = async function (date, timeSlots) {
 	const startOfDay = new Date(date);
-	startOfDay.setHours(0, 0, 0, 0);
+	startOfDay.setUTCHours(0, 0, 0, 0);
 
 	const endOfDay = new Date(date);
-	endOfDay.setHours(23, 59, 59, 999);
+	endOfDay.setUTCHours(23, 59, 59, 999);
 
 	// Format the time slots
 	const formattedTimeSlots = timeSlots.map((time) => ({

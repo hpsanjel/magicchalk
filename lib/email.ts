@@ -63,27 +63,37 @@ export async function sendTourBookingConfirmation(
 		confirmedDate?: string;
 		confirmedTime?: string;
 		phone: string;
+		isReschedule?: boolean;
+		previousDate?: string | Date;
+		previousTime?: string;
 	}
 ) {
 	// Use confirmed date/time if available, otherwise fall back to preferred
+	const isReschedule = Boolean(bookingDetails.isReschedule);
 	const tourDate = bookingDetails.confirmedDate || bookingDetails.preferredDate;
 	const tourTime = bookingDetails.confirmedTime || bookingDetails.preferredTime;
 	const formattedDate = format(new Date(tourDate), "EEEE, MMMM d, yyyy");
+	const previousDateFormatted = bookingDetails.previousDate ? format(new Date(bookingDetails.previousDate), "EEEE, MMMM d, yyyy") : null;
+	const previousTimeFormatted = bookingDetails.previousTime || null;
+	const subjectLine = isReschedule ? "School Tour Booking Rescheduled - Magic Chalk" : "School Tour Booking Confirmed - Magic Chalk";
+	const headingText = isReschedule ? "Tour Booking Rescheduled" : "Tour Booking Confirmed!";
+	const introText = isReschedule ? "Your school tour booking has been rescheduled." : "Great news! Your school tour booking has been confirmed.";
+	const headerIcon = isReschedule ? "🔁" : "🎉";
 
 	const mailOptions = {
 		from: `"Magic Chalk School" <${process.env.EMAIL_USER}>`,
 		to,
-		subject: "School Tour Booking Confirmed - Magic Chalk",
+		subject: subjectLine,
 		text: `Dear ${bookingDetails.parentFirstName} ${bookingDetails.parentLastName},
 
-Your school tour booking has been confirmed!
+${introText}
 
-Tour Details:
+New Tour Details:
 Child Name: ${bookingDetails.childFirstName} ${bookingDetails.childLastName}
 Date: ${formattedDate}
 Time: ${tourTime}
 
-Please arrive 10 minutes early. If you need to reschedule or have any questions, please contact us.
+${isReschedule && (previousDateFormatted || previousTimeFormatted) ? `Previous Schedule: ${previousDateFormatted || ""} ${previousTimeFormatted || ""}\n\n` : ""}Please arrive 10 minutes early. If you need to reschedule or have any questions, please contact us.
 
 We look forward to showing you around our school!
 
@@ -101,17 +111,20 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 .detail-row { padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
 .detail-row:last-child { border-bottom: none; }
 .label { font-weight: bold; color: #16a34a; }
+.pill { display: inline-block; margin-top: 8px; padding: 6px 10px; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: bold; letter-spacing: 0.01em; }
+.previous { background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 8px; margin-top: 12px; }
 .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
-<h1>🎉 Tour Booking Confirmed!</h1>
+<h1>${headerIcon} ${headingText}</h1>
+${isReschedule ? '<div class="pill">Rescheduled</div>' : ""}
 </div>
 <div class="content">
 <h2>Dear ${bookingDetails.parentFirstName} ${bookingDetails.parentLastName},</h2>
-<p>Great news! Your school tour booking has been confirmed.</p>
+<p>${introText}</p>
 <div class="details">
 <div class="detail-row">
 <span class="label">Child Name:</span> ${bookingDetails.childFirstName} ${bookingDetails.childLastName}
@@ -123,6 +136,15 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 <span class="label">Tour Time:</span> ${tourTime}
 </div>
 </div>
+${
+	isReschedule && (previousDateFormatted || previousTimeFormatted)
+		? `
+<div class="previous">
+<strong>Previous schedule:</strong><br />
+${previousDateFormatted || ""}${previousDateFormatted && previousTimeFormatted ? " at " : previousDateFormatted ? "" : ""}${previousTimeFormatted || ""}
+</div>`
+		: ""
+}
 <p><strong>Important Reminders:</strong></p>
 <ul>
 <li>Please arrive 10 minutes early</li>

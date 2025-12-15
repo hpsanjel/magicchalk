@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,13 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar as CalendarIcon, Clock, Mail, Phone, User, Baby, School, MessageSquare, AlertCircle, Trash2, CheckCircle, Search, Download, FileText, Printer } from "lucide-react";
-import { addAvailableDate } from "@/lib/actions-mongoose"; // Updated import to use Mongoose actions
+import { Calendar as CalendarIcon, Clock, Mail, Phone, User, Baby, School, MessageSquare, AlertCircle, Trash2, CheckCircle, Search, Download, FileText, Printer, Info, X } from "lucide-react";
+import { addAvailableDate } from "@/lib/actions-mongoose";
 
 interface AdminDashboardProps {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	appointments: any[]; // Changed from Appointment[] to any[] to accept TourBooking data
-	onRefresh?: () => void; // Callback to refresh data
+	appointments: any[];
+	onRefresh?: () => void;
 }
 
 export default function AdminDashboard({ appointments = [], onRefresh }: AdminDashboardProps) {
@@ -31,10 +31,17 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const [processingId, setProcessingId] = useState<string | null>(null);
 	const [timeError, setTimeError] = useState("");
 	const [existingSlots, setExistingSlots] = useState<string[]>([]);
+	const [availabilityList, setAvailabilityList] = useState<any[]>([]);
+	const [confirmedBookings, setConfirmedBookings] = useState<any[]>([]);
+	const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+	const [rescheduleBooking, setRescheduleBooking] = useState<any>(null);
+	const [rescheduleDate, setRescheduleDate] = useState<Date | undefined>(undefined);
+	const [rescheduleTime, setRescheduleTime] = useState<string>("");
 
 	// Modal states
 	const [showDateSelectionModal, setShowDateSelectionModal] = useState(false);
 	const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+	const [showInfoModal, setShowInfoModal] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [selectedBooking, setSelectedBooking] = useState<any>(null);
 	const [selectedDateOption, setSelectedDateOption] = useState<"preferred" | "alternate">("preferred");
@@ -50,15 +57,15 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const filteredAppointments = useMemo(() => {
 		let filtered = [...appointments];
 
-		// Apply date filter
 		if (filterPeriod !== "all") {
 			const now = new Date();
-			let start: Date, end: Date;
+			let start: Date | undefined;
+			let end: Date | undefined;
 
 			switch (filterPeriod) {
 				case "week":
-					start = startOfWeek(now, { weekStartsOn: 0 });
-					end = endOfWeek(now, { weekStartsOn: 0 });
+					start = startOfWeek(now);
+					end = endOfWeek(now);
 					break;
 				case "month":
 					start = startOfMonth(now);
@@ -72,52 +79,63 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 					if (customStartDate && customEndDate) {
 						start = customStartDate;
 						end = customEndDate;
-					} else {
-						return filtered;
 					}
 					break;
 				default:
-					return filtered;
+					break;
 			}
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			filtered = filtered.filter((booking: any) => {
-				const bookingDate = new Date(booking.preferredDate);
-				return isWithinInterval(bookingDate, { start, end });
-			});
+
+			if (start && end) {
+				filtered = filtered.filter((appointment: any) => {
+					const dateValue = appointment.confirmedDate || appointment.preferredDate;
+					const dateObj = dateValue ? new Date(dateValue) : null;
+					return dateObj ? isWithinInterval(dateObj, { start, end }) : false;
+				});
+			}
 		}
 
-		// Apply search filter
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			filtered = filtered.filter((booking: any) => {
-				const searchText = `${booking.parentFirstName} ${booking.parentLastName} ${booking.childFirstName} ${booking.childLastName} ${booking.email} ${booking.phone} ${booking.status}`.toLowerCase();
-				return searchText.includes(query);
+			filtered = filtered.filter((appointment: any) => {
+				const searchable = [appointment.parentFirstName, appointment.parentLastName, appointment.childFirstName, appointment.childLastName, appointment.email, appointment.phone, appointment.status].filter(Boolean).map((value: string) => value.toLowerCase());
+
+				return searchable.some((value: string) => value.includes(query));
 			});
 		}
 
 		return filtered;
 	}, [appointments, filterPeriod, customStartDate, customEndDate, searchQuery]);
 
-	// Export to CSV
-	const exportToCSV = () => {
-		const headers = ["Parent Name", "Email", "Phone", "Child Name", "Child DOB", "Tour Date", "Tour Time", "Alternate Date", "Alternate Time", "Status", "Questions", "Submitted Date"];
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const rows = filteredAppointments.map((booking: any) => [`${booking.parentFirstName} ${booking.parentLastName}`, booking.email, booking.phone, `${booking.childFirstName} ${booking.childLastName}`, formatAppointmentDate(booking.childDob), booking.confirmedDate ? `${formatAppointmentDate(booking.confirmedDate)} (Confirmed)` : formatAppointmentDate(booking.preferredDate), booking.confirmedTime || booking.preferredTime, booking.alternateDate ? formatAppointmentDate(booking.alternateDate) : "N/A", booking.alternateTime || "N/A", booking.status, booking.questions || "N/A", formatAppointmentDate(booking.createdAt)]);
-
-		const csvContent = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
-
-		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-		const link = document.createElement("a");
-		const url = URL.createObjectURL(blob);
-		link.setAttribute("href", url);
-		link.setAttribute("download", `tour-bookings-${format(new Date(), "yyyy-MM-dd")}.csv`);
-		link.style.visibility = "hidden";
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
+	const toDateOnly = (date: Date | string | undefined) => {
+		if (!date) return "";
+		const parsed = new Date(date);
+		if (Number.isNaN(parsed.getTime())) return "";
+		return parsed.toISOString().split("T")[0];
 	};
+
+	const refreshAvailabilityData = useCallback(async () => {
+		try {
+			const response = await fetch("/api/availability");
+			if (!response.ok) {
+				throw new Error("Failed to load availability overview");
+			}
+
+			const data = await response.json();
+			setAvailabilityList(Array.isArray(data) ? data : []);
+			setConfirmedBookings(appointments.filter((a: any) => a.status === "confirmed"));
+		} catch (err) {
+			console.error("Failed to load availability overview", err);
+		}
+	}, [appointments]);
+
+	useEffect(() => {
+		setShowCustomDatePicker(filterPeriod === "custom");
+	}, [filterPeriod]);
+
+	// Load availability and confirmed bookings for overview list
+	useEffect(() => {
+		refreshAvailabilityData();
+	}, [refreshAvailabilityData]);
 
 	// Export to PDF
 	const exportToPDF = () => {
@@ -200,14 +218,13 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	// Load existing time slots when date is selected
 	const loadExistingTimeSlots = async (selectedDate: Date) => {
 		try {
-			const dateStr = selectedDate.toISOString().split("T")[0];
+			const dateStr = toDateOnly(selectedDate);
 			const response = await fetch("/api/availability");
 			const availabilities = await response.json();
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const existing = availabilities.find((avail: any) => {
-				const availDate = new Date(avail.date).toISOString().split("T")[0];
-				return availDate === dateStr;
+				return toDateOnly(avail.date) === dateStr;
 			});
 
 			if (existing && existing.timeSlots) {
@@ -325,6 +342,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		try {
 			// Save to MongoDB using the server action
 			await addAvailableDate(date, timeSlots);
+			await refreshAvailabilityData();
 
 			const message = existingSlots.length > 0 ? "Time slots updated successfully! New slots have been added to the existing date." : "Available date added successfully!";
 			alert(message);
@@ -349,6 +367,148 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		}
 	};
 
+	const formatAvailabilityDate = (date: Date) => {
+		try {
+			return format(new Date(date), "EEE, MMM d, yyyy");
+		} catch {
+			return "Invalid date";
+		}
+	};
+
+	const toDateTime = (dateValue: Date | string | undefined, timeValue: string | undefined) => {
+		if (!dateValue || !timeValue) return null;
+		const base = new Date(dateValue);
+		if (Number.isNaN(base.getTime())) return null;
+		const match = timeValue.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+		if (!match) return null;
+		let hours = parseInt(match[1], 10);
+		const minutes = parseInt(match[2], 10);
+		const period = match[3].toUpperCase();
+		if (period === "PM" && hours !== 12) hours += 12;
+		if (period === "AM" && hours === 12) hours = 0;
+		return new Date(base.getFullYear(), base.getMonth(), base.getDate(), hours, minutes, 0, 0);
+	};
+
+	const getRescheduleOpenSlots = (targetDate?: Date | string | null) => {
+		if (!targetDate || !rescheduleBooking) return [] as string[];
+		const dateKey = toDateOnly(targetDate as Date | string);
+		if (!dateKey) return [] as string[];
+
+		const avail = availabilityList.find((a) => toDateOnly(a.date) === dateKey);
+		if (!avail) return [] as string[];
+
+		const bookingTimes = confirmedBookings.filter((b: any) => toDateOnly(b.confirmedDate || b.preferredDate) === dateKey).map((b: any) => b.confirmedTime || b.preferredTime);
+		const bookedSet = new Set([...(avail.timeSlots || []).filter((s: any) => s.isBooked).map((s: any) => s.time), ...bookingTimes]);
+
+		const currentBookingTime = rescheduleBooking.confirmedTime || rescheduleBooking.preferredTime;
+		const currentBookingDate = rescheduleBooking.confirmedDate || rescheduleBooking.preferredDate;
+		if (currentBookingTime && toDateOnly(currentBookingDate) === dateKey) {
+			bookedSet.delete(currentBookingTime);
+		}
+
+		const slots = (avail.timeSlots || []).filter((slot: any) => !bookedSet.has(slot.time)).map((slot: any) => slot.time);
+
+		const todayKey = toDateOnly(new Date());
+		if (dateKey === todayKey) {
+			const now = new Date();
+			return slots.filter((time: string) => {
+				const dt = toDateTime(targetDate as Date | string, time);
+				return dt ? dt.getTime() >= now.getTime() : false;
+			});
+		}
+
+		return slots;
+	};
+
+	const getRescheduleSelectableSlots = (targetDate?: Date | string | null) => {
+		const slots = getRescheduleOpenSlots(targetDate);
+		if (!rescheduleBooking || !targetDate) return slots;
+
+		const originalDateKey = toDateOnly(rescheduleBooking.confirmedDate || rescheduleBooking.preferredDate);
+		const dateKey = toDateOnly(targetDate as Date | string);
+		if (!originalDateKey || !dateKey || originalDateKey !== dateKey) return slots;
+
+		const originalTime = rescheduleBooking.confirmedTime || rescheduleBooking.preferredTime || "";
+		return slots.filter((time: string) => time !== originalTime);
+	};
+
+	const isFutureOrToday = (value: Date | string) => {
+		const d = new Date(value);
+		if (Number.isNaN(d.getTime())) return false;
+		const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+		const today = new Date();
+		const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+		return dayStart >= todayStart;
+	};
+
+	const isEligibleRescheduleDate = (value: Date | string) => {
+		const d = new Date(value);
+		if (Number.isNaN(d.getTime())) return false;
+		const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+		const today = new Date();
+		const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+
+		// If the date is today, only allow if there are remaining future time slots
+		if (dayStart.getTime() === todayStart.getTime()) {
+			return getRescheduleOpenSlots(value).length > 0;
+		}
+
+		// Future days remain eligible
+		return dayStart > todayStart;
+	};
+
+	const getRescheduleEligibleDates = (bookingOverride?: any) => {
+		const booking = bookingOverride ?? rescheduleBooking;
+		const originalDateKey = booking ? toDateOnly(booking.confirmedDate || booking.preferredDate) : "";
+		return availabilityList.filter((avail) => {
+			const dateKey = toDateOnly(avail.date);
+			if (!dateKey) return false;
+			const slotCount = getRescheduleSelectableSlots(avail.date).length;
+			if (originalDateKey && dateKey === originalDateKey) {
+				// Allow same-day reschedule only if there is an alternate open slot
+				return slotCount > 0;
+			}
+			return isEligibleRescheduleDate(avail.date) && slotCount >= 0;
+		});
+	};
+
+	const hasRescheduleAvailability = getRescheduleEligibleDates().length > 0;
+	const hasRescheduleActions = getRescheduleEligibleDates().some((avail) => getRescheduleSelectableSlots(avail.date).length > 0);
+
+	// Determine if a booking's scheduled tour time is in the past (for no-show handling)
+	const isTourInPast = (booking: any) => {
+		const dt = toDateTime(booking.confirmedDate || booking.preferredDate, booking.confirmedTime || booking.preferredTime);
+		if (!dt) return false;
+		return dt.getTime() < Date.now();
+	};
+
+	// Remove a single time slot from availability, then refresh overview
+	const handleRemoveAvailabilitySlot = useCallback(
+		async (dateValue: Date | string, time: string) => {
+			try {
+				const parsedDate = new Date(dateValue);
+				if (Number.isNaN(parsedDate.getTime())) {
+					toast({ variant: "destructive", title: "Invalid date", description: "Could not determine the date for this slot." });
+					return;
+				}
+
+				const dateParam = toDateOnly(parsedDate);
+				const res = await fetch(`/api/availability?date=${dateParam}&time=${encodeURIComponent(time)}`, { method: "DELETE" });
+				if (!res.ok) {
+					const data = await res.json().catch(() => ({}));
+					throw new Error(data.message || "Failed to remove time slot");
+				}
+
+				await refreshAvailabilityData();
+				toast({ title: "Time slot removed", description: `${formatAvailabilityDate(parsedDate)} • ${time}` });
+			} catch (err) {
+				console.error("Failed to remove time slot", err);
+				toast({ variant: "destructive", title: "Unable to remove slot", description: err instanceof Error ? err.message : "Unexpected error" });
+			}
+		},
+		[refreshAvailabilityData, toast]
+	);
+
 	// Calculate child age from DOB
 	const calculateAge = (dob: Date) => {
 		try {
@@ -372,6 +532,8 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 				return "bg-green-100 text-green-800";
 			case "pending":
 				return "bg-yellow-100 text-yellow-800";
+			case "no-show":
+				return "bg-orange-100 text-orange-800";
 			case "completed":
 				return "bg-blue-100 text-blue-800";
 			case "cancelled":
@@ -379,6 +541,17 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 			default:
 				return "bg-gray-100 text-gray-800";
 		}
+	};
+
+	// Determine if a booking has been rescheduled (persisted flag or schedule change)
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const isBookingRescheduled = (booking: any) => {
+		const flag = Boolean(booking?.rescheduled);
+		const preferredDateKey = booking?.preferredDate ? toDateOnly(booking.preferredDate) : null;
+		const confirmedDateKey = booking?.confirmedDate ? toDateOnly(booking.confirmedDate) : null;
+		const dateChanged = preferredDateKey && confirmedDateKey ? preferredDateKey !== confirmedDateKey : false;
+		const timeChanged = booking?.confirmedTime && booking?.preferredTime ? booking.confirmedTime !== booking.preferredTime : false;
+		return flag || dateChanged || timeChanged;
 	};
 
 	// Confirm booking
@@ -481,6 +654,115 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		}
 	};
 
+	// Open reschedule modal
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const handleOpenReschedule = (booking: any) => {
+		setRescheduleBooking(booking);
+		const initialDateRaw = booking.confirmedDate ? new Date(booking.confirmedDate) : booking.preferredDate ? new Date(booking.preferredDate) : undefined;
+		const originalDateKey = initialDateRaw ? toDateOnly(initialDateRaw) : "";
+		const eligibleDates = getRescheduleEligibleDates(booking);
+		const firstWithSlots = eligibleDates.find((avail) => getRescheduleSelectableSlots(avail.date).length > 0);
+		let initialDate = firstWithSlots?.date ?? eligibleDates[0]?.date;
+		// Prefer staying on the same date if it has an alternate slot
+		if (!initialDate && originalDateKey) {
+			const sameDate = eligibleDates.find((avail) => toDateOnly(avail.date) === originalDateKey);
+			if (sameDate) initialDate = sameDate.date;
+		}
+		if (initialDate) {
+			setRescheduleDate(new Date(initialDate));
+			const slots = getRescheduleSelectableSlots(initialDate);
+			setRescheduleTime(slots[0] || "");
+		} else {
+			setRescheduleDate(undefined);
+			setRescheduleTime("");
+		}
+
+		setShowRescheduleModal(true);
+	};
+
+	// Submit reschedule
+	const handleSubmitReschedule = async () => {
+		if (!rescheduleBooking) return;
+		if (!rescheduleDate) {
+			toast({ variant: "destructive", title: "Select a date", description: "Please choose a new tour date." });
+			return;
+		}
+		if (!rescheduleTime.trim()) {
+			toast({ variant: "destructive", title: "Enter a time", description: "Please provide a new tour time." });
+			return;
+		}
+
+		const timeRegex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s?(AM|PM)$/i;
+		if (!timeRegex.test(rescheduleTime.trim())) {
+			toast({ variant: "destructive", title: "Invalid time", description: "Use HH:MM AM/PM (e.g., 09:30 AM)." });
+			return;
+		}
+
+		const originalDateKey = toDateOnly(rescheduleBooking.confirmedDate || rescheduleBooking.preferredDate);
+		const originalTime = rescheduleBooking.confirmedTime || rescheduleBooking.preferredTime || "";
+		const newDateKey = toDateOnly(rescheduleDate);
+		const newTime = rescheduleTime.trim();
+
+		if (originalDateKey && newDateKey && originalDateKey === newDateKey && originalTime === newTime) {
+			toast({ variant: "destructive", title: "Pick a different slot", description: "The new schedule must differ from the current date and time." });
+			return;
+		}
+
+		setProcessingId(rescheduleBooking._id);
+		try {
+			const response = await fetch("/api/tour-bookings", {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ id: rescheduleBooking._id, status: "confirmed", confirmedDate: rescheduleDate, confirmedTime: rescheduleTime.trim() }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to reschedule");
+			}
+
+			toast({ title: "Booking rescheduled", description: `${rescheduleBooking.parentFirstName} ${rescheduleBooking.parentLastName} moved to ${formatAppointmentDate(rescheduleDate)} at ${rescheduleTime.trim()}` });
+			onRefresh?.();
+			setShowRescheduleModal(false);
+			setRescheduleBooking(null);
+			setRescheduleDate(undefined);
+			setRescheduleTime("");
+		} catch (error) {
+			console.error("Error rescheduling booking:", error);
+			toast({ variant: "destructive", title: "Failed to reschedule", description: "Please try again." });
+		} finally {
+			setProcessingId(null);
+		}
+	};
+
+	// Mark as no-show
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const handleNoShow = async (booking: any) => {
+		setProcessingId(booking._id);
+		try {
+			const response = await fetch("/api/tour-bookings", {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ id: booking._id, status: "no-show", noShowAt: new Date().toISOString() }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to mark as no-show");
+			}
+
+			toast({ title: "Marked as no-show", description: `${booking.parentFirstName} ${booking.parentLastName} did not attend.` });
+			onRefresh?.();
+		} catch (error) {
+			console.error("Error marking no-show:", error);
+			toast({ variant: "destructive", title: "Failed to mark no-show", description: "Please try again." });
+		} finally {
+			setProcessingId(null);
+		}
+	};
+
 	// Delete booking
 	const handleDelete = async (bookingId: string, parentName: string) => {
 		if (!confirm(`Are you sure you want to delete the booking for ${parentName}? This action cannot be undone.`)) {
@@ -515,266 +797,210 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 					<TabsTrigger value="availability">Manage Availability</TabsTrigger>
 				</TabsList>
 				<TabsContent value="appointments">
-					<div className="mb-6">
-						<div className="flex items-center justify-between mb-4">
-							<div>
-								<h2 className="text-2xl font-bold">Tour Bookings</h2>
-								<p className="text-gray-600">
-									Showing {filteredAppointments.length} of {appointments.length} booking(s)
-								</p>
-							</div>
-						</div>
-
-						{/* Filter and Search Bar */}
-						<div className="space-y-4 mb-6">
-							{/* Period Filters */}
-							<div className="flex flex-wrap gap-2">
-								<Button size="sm" variant={filterPeriod === "all" ? "default" : "outline"} onClick={() => setFilterPeriod("all")} className={filterPeriod === "all" ? "bg-green-600 hover:bg-green-700" : ""}>
-									All
-								</Button>
-								<Button
-									size="sm"
-									variant={filterPeriod === "week" ? "default" : "outline"}
-									onClick={() => {
-										setFilterPeriod("week");
-										setShowCustomDatePicker(false);
-									}}
-									className={filterPeriod === "week" ? "bg-green-600 hover:bg-green-700" : ""}
-								>
-									This Week
-								</Button>
-								<Button
-									size="sm"
-									variant={filterPeriod === "month" ? "default" : "outline"}
-									onClick={() => {
-										setFilterPeriod("month");
-										setShowCustomDatePicker(false);
-									}}
-									className={filterPeriod === "month" ? "bg-green-600 hover:bg-green-700" : ""}
-								>
-									This Month
-								</Button>
-								<Button
-									size="sm"
-									variant={filterPeriod === "year" ? "default" : "outline"}
-									onClick={() => {
-										setFilterPeriod("year");
-										setShowCustomDatePicker(false);
-									}}
-									className={filterPeriod === "year" ? "bg-green-600 hover:bg-green-700" : ""}
-								>
-									This Year
-								</Button>
-								<Button
-									size="sm"
-									variant={filterPeriod === "custom" ? "default" : "outline"}
-									onClick={() => {
-										setFilterPeriod("custom");
-										setShowCustomDatePicker(!showCustomDatePicker);
-									}}
-									className={filterPeriod === "custom" ? "bg-green-600 hover:bg-green-700" : ""}
-								>
-									<CalendarIcon className="w-4 h-4 mr-1" />
-									Custom Range
-								</Button>
-
-								{/* Export Buttons */}
-								<div className="ml-auto flex gap-2">
-									<Button size="sm" variant="outline" onClick={exportToCSV} title="Export to CSV">
-										<Download className="w-4 h-4 mr-1" />
-										CSV
-									</Button>
-									<Button size="sm" variant="outline" onClick={exportToPDF} title="Download as PDF">
-										<FileText className="w-4 h-4 mr-1" />
-										PDF
-									</Button>
-									<Button size="sm" variant="outline" onClick={handlePrint} title="Print">
-										<Printer className="w-4 h-4 mr-1" />
-										Print
-									</Button>
-								</div>
-							</div>
-
-							{/* Custom Date Range Picker */}
-							{showCustomDatePicker && filterPeriod === "custom" && (
-								<Card>
-									<CardContent className="pt-4">
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											<div>
-												<Label className="mb-2 block">Start Date</Label>
-												<Calendar mode="single" selected={customStartDate} onSelect={setCustomStartDate} className="border rounded-md" />
-											</div>
-											<div>
-												<Label className="mb-2 block">End Date</Label>
-												<Calendar mode="single" selected={customEndDate} onSelect={setCustomEndDate} className="border rounded-md" disabled={(date) => !customStartDate || date < customStartDate} />
-											</div>
+					<div className="space-y-6">
+						{/* Custom Date Range Picker */}
+						{showCustomDatePicker && filterPeriod === "custom" && (
+							<Card>
+								<CardContent className="pt-4">
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<div>
+											<Label className="mb-2 block">Start Date</Label>
+											<Calendar mode="single" selected={customStartDate} onSelect={setCustomStartDate} className="border rounded-md" />
 										</div>
-										{customStartDate && customEndDate && (
-											<div className="mt-4 text-sm text-gray-600">
-												Filtering from {format(customStartDate, "MMM d, yyyy")} to {format(customEndDate, "MMM d, yyyy")}
-											</div>
-										)}
-									</CardContent>
-								</Card>
-							)}
+										<div>
+											<Label className="mb-2 block">End Date</Label>
+											<Calendar mode="single" selected={customEndDate} onSelect={setCustomEndDate} className="border rounded-md" disabled={(date) => !customStartDate || date < customStartDate} />
+										</div>
+									</div>
+									{customStartDate && customEndDate && (
+										<div className="mt-4 text-sm text-gray-600">
+											Filtering from {format(customStartDate, "MMM d, yyyy")} to {format(customEndDate, "MMM d, yyyy")}
+										</div>
+									)}
+								</CardContent>
+							</Card>
+						)}
 
-							{/* Search Bar */}
-							<div className="relative">
-								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-								<Input type="text" placeholder="Search by parent name, child name, email, phone, or status..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2" />
-								{searchQuery && (
-									<button type="button" onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-										×
-									</button>
-								)}
-							</div>
+						{/* Search Bar */}
+						<div className="relative mb-4 lg:mb-8">
+							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+							<Input type="text" placeholder="Search by parent name, child name, email, phone, or status..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2" />
+							{searchQuery && (
+								<button type="button" onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+									×
+								</button>
+							)}
 						</div>
 					</div>
 
 					{filteredAppointments.length > 0 ? (
 						<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 							{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-							{filteredAppointments.map((booking: any) => (
-								<Card key={booking._id} className="hover:shadow-lg transition-shadow">
-									{/* Status Bar at Top */}
-									<div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
-										<Badge className={getStatusColor(booking.status || "pending")}>{booking.status || "pending"}</Badge>
-										<Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(booking._id, `${booking.parentFirstName} ${booking.parentLastName}`)} disabled={processingId === booking._id} title="Delete booking">
-											<Trash2 className="w-4 h-4" />
-										</Button>
-									</div>
-
-									<CardHeader className="pb-3">
-										<CardTitle className="text-lg flex items-center gap-2">
-											<User className="w-5 h-5 text-green-600" />
-											{booking.parentFirstName} {booking.parentLastName}
-										</CardTitle>
-										<CardDescription className="mt-1">Parent/Guardian</CardDescription>
-									</CardHeader>
-									<CardContent className="space-y-4">
-										{/* Child Information */}
-										<div className="bg-green-50 p-3 rounded-lg space-y-2">
-											<div className="flex items-center gap-2 font-semibold text-green-800">
-												<Baby className="w-4 h-4" />
-												Child Information
+							{filteredAppointments.map((booking: any) => {
+								const canMarkNoShow = booking.status === "confirmed" && isTourInPast(booking);
+								const rescheduled = isBookingRescheduled(booking);
+								return (
+									<Card key={booking._id} className="hover:shadow-lg transition-shadow">
+										{/* Status Bar at Top */}
+										<div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
+											<div className="flex items-center gap-2">
+												<Badge className={getStatusColor(booking.status || "pending")}>{booking.status || "pending"}</Badge>
+												{rescheduled && <Badge className="bg-purple-100 text-purple-800 border border-purple-200">Rescheduled</Badge>}
 											</div>
-											<div className="ml-6 space-y-1 text-sm">
-												<p className="font-medium">
-													{booking.childFirstName} {booking.childLastName}
-												</p>
-												{booking.childDob && (
-													<p className="text-gray-600">
-														Age: {calculateAge(booking.childDob)} years
-														<span className="text-xs ml-1">({formatAppointmentDate(booking.childDob)})</span>
+											<Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(booking._id, `${booking.parentFirstName} ${booking.parentLastName}`)} disabled={processingId === booking._id} title="Delete booking">
+												<Trash2 className="w-4 h-4" />
+											</Button>
+										</div>
+
+										<CardHeader className="pb-3">
+											<CardTitle className="text-lg flex items-center gap-2">
+												<User className="w-5 h-5 text-green-600" />
+												{booking.parentFirstName} {booking.parentLastName}
+											</CardTitle>
+											<CardDescription className="mt-1">Parent/Guardian</CardDescription>
+										</CardHeader>
+										<CardContent className="space-y-4">
+											{/* Child Information */}
+											<div className="bg-green-50 p-3 rounded-lg space-y-2">
+												<div className="flex items-center gap-2 font-semibold text-green-800">
+													<Baby className="w-4 h-4" />
+													Child Information
+												</div>
+												<div className="ml-6 space-y-1 text-sm">
+													<p className="font-medium">
+														{booking.childFirstName} {booking.childLastName}
 													</p>
-												)}
-												{booking.currentSchool && (
-													<div className="flex items-center gap-1 text-gray-600">
-														<School className="w-3 h-3" />
-														<span>{booking.currentSchool}</span>
-													</div>
-												)}
-											</div>
-										</div>
-
-										{/* Tour Schedule */}
-										<div className="space-y-2">
-											{booking.confirmedDate ? (
-												<>
-													<div className="flex items-center gap-2 text-sm font-semibold text-green-700">
-														<CalendarIcon className="w-4 h-4 text-green-600" />
-														Confirmed Schedule
-													</div>
-													<div className="ml-6 bg-green-50 p-2 rounded">
-														<p className="text-sm font-bold text-green-800">{formatAppointmentDate(booking.confirmedDate)}</p>
-														<p className="text-sm flex items-center gap-1 text-green-700">
-															<Clock className="w-3 h-3" />
-															{booking.confirmedTime}
+													{booking.childDob && (
+														<p className="text-gray-600">
+															Age: {calculateAge(booking.childDob)} years
+															<span className="text-xs ml-1">({formatAppointmentDate(booking.childDob)})</span>
 														</p>
-													</div>
-												</>
-											) : (
-												<>
-													<div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-														<CalendarIcon className="w-4 h-4 text-blue-600" />
-														Preferred Schedule
-													</div>
-													<div className="ml-6 space-y-1">
-														<p className="text-sm">
-															<span className="font-medium">Date:</span> {formatAppointmentDate(booking.preferredDate)}
-														</p>
-														<p className="text-sm flex items-center gap-1">
-															<Clock className="w-3 h-3" />
-															<span className="font-medium">Time:</span> {booking.preferredTime}
-														</p>
-														{booking.alternateDate && (
-															<div className="mt-2 pt-2 border-t border-gray-200">
-																<p className="text-xs text-gray-600">
-																	Alternate: {formatAppointmentDate(booking.alternateDate)} at {booking.alternateTime}
-																</p>
-															</div>
-														)}
-													</div>
-												</>
-											)}
-										</div>
-
-										{/* Contact Information */}
-										<div className="space-y-2 pt-2 border-t">
-											<div className="flex items-center gap-2 text-sm">
-												<Mail className="w-4 h-4 text-gray-400" />
-												<a href={`mailto:${booking.email}`} className="text-blue-600 hover:underline text-sm">
-													{booking.email}
-												</a>
-											</div>
-											<div className="flex items-center gap-2 text-sm">
-												<Phone className="w-4 h-4 text-gray-400" />
-												<a href={`tel:${booking.phone}`} className="text-blue-600 hover:underline">
-													{booking.phone}
-												</a>
-											</div>
-										</div>
-
-										{/* Questions/Comments */}
-										{booking.questions && (
-											<div className="bg-gray-50 p-3 rounded-lg">
-												<div className="flex items-start gap-2">
-													<MessageSquare className="w-4 h-4 text-gray-500 mt-0.5" />
-													<div className="flex-1">
-														<p className="text-xs font-semibold text-gray-700 mb-1">Questions/Comments:</p>
-														<p className="text-xs text-gray-600">{booking.questions}</p>
-													</div>
+													)}
+													{booking.currentSchool && (
+														<div className="flex items-center gap-1 text-gray-600">
+															<School className="w-3 h-3" />
+															<span>{booking.currentSchool}</span>
+														</div>
+													)}
 												</div>
 											</div>
-										)}
 
-										{/* Action Buttons */}
-										<div className="flex gap-2 pt-2">
-											{booking.status !== "completed" ? (
-												<>
-													<Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleConfirm(booking._id, booking)} disabled={processingId === booking._id || booking.status === "confirmed"}>
-														{processingId === booking._id ? "Processing..." : booking.status === "confirmed" ? "Confirmed ✓" : "Confirm & Email"}
-													</Button>
-													{booking.status === "confirmed" && (
-														<Button size="sm" variant="outline" className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50" onClick={() => handleComplete(booking._id)} disabled={processingId === booking._id}>
-															<CheckCircle className="w-4 h-4 mr-1" />
-															Complete
-														</Button>
-													)}
-												</>
-											) : (
-												<Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled>
-													<CheckCircle className="w-4 h-4 mr-1" />
-													Completed
-												</Button>
+											{/* Tour Schedule */}
+											<div className="space-y-2">
+												{booking.confirmedDate ? (
+													<>
+														<div className="flex items-center gap-2 text-sm font-semibold text-green-700">
+															<CalendarIcon className="w-4 h-4 text-green-600" />
+															Confirmed Schedule
+														</div>
+														<div className="ml-6 bg-green-50 p-2 rounded">
+															<p className="text-sm font-bold text-green-800">{formatAppointmentDate(booking.confirmedDate)}</p>
+															<p className="text-sm flex items-center gap-1 text-green-700">
+																<Clock className="w-3 h-3" />
+																{booking.confirmedTime}
+															</p>
+														</div>
+													</>
+												) : (
+													<>
+														<div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+															<CalendarIcon className="w-4 h-4 text-blue-600" />
+															Preferred Schedule
+														</div>
+														<div className="ml-6 space-y-1">
+															<p className="text-sm">
+																<span className="font-medium">Date:</span> {formatAppointmentDate(booking.preferredDate)}
+															</p>
+															<p className="text-sm flex items-center gap-1">
+																<Clock className="w-3 h-3" />
+																<span className="font-medium">Time:</span> {booking.preferredTime}
+															</p>
+															{booking.alternateDate && (
+																<div className="mt-2 pt-2 border-t border-gray-200">
+																	<p className="text-xs text-gray-600">
+																		Alternate: {formatAppointmentDate(booking.alternateDate)} at {booking.alternateTime}
+																	</p>
+																</div>
+															)}
+														</div>
+													</>
+												)}
+											</div>
+
+											{/* Contact Information */}
+											<div className="space-y-2 pt-2 border-t">
+												<div className="flex items-center gap-2 text-sm">
+													<Mail className="w-4 h-4 text-gray-400" />
+													<a href={`mailto:${booking.email}`} className="text-blue-600 hover:underline text-sm">
+														{booking.email}
+													</a>
+												</div>
+												<div className="flex items-center gap-2 text-sm">
+													<Phone className="w-4 h-4 text-gray-400" />
+													<a href={`tel:${booking.phone}`} className="text-blue-600 hover:underline">
+														{booking.phone}
+													</a>
+												</div>
+											</div>
+
+											{/* Questions/Comments */}
+											{booking.questions && (
+												<div className="bg-gray-50 p-3 rounded-lg">
+													<div className="flex items-start gap-2">
+														<MessageSquare className="w-4 h-4 text-gray-500 mt-0.5" />
+														<div className="flex-1">
+															<p className="text-xs font-semibold text-gray-700 mb-1">Questions/Comments:</p>
+															<p className="text-xs text-gray-600">{booking.questions}</p>
+														</div>
+													</div>
+												</div>
 											)}
-										</div>
 
-										{/* Metadata */}
-										<div className="text-xs text-gray-400 pt-2 border-t">Submitted: {formatAppointmentDate(booking.createdAt)}</div>
-									</CardContent>
-								</Card>
-							))}
+											{/* Action Buttons */}
+											<div className="flex flex-col gap-2 pt-2">
+												{booking.status !== "completed" ? (
+													<>
+														<div className="flex gap-2">
+															<Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleConfirm(booking._id, booking)} disabled={processingId === booking._id || booking.status === "confirmed" || booking.status === "no-show"}>
+																{processingId === booking._id ? "Processing..." : booking.status === "confirmed" ? "Confirmed ✓" : "Confirm & Email"}
+															</Button>
+															{booking.status === "confirmed" && (
+																<Button size="sm" variant="outline" className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50" onClick={() => handleComplete(booking._id)} disabled={processingId === booking._id}>
+																	<CheckCircle className="w-4 h-4 mr-1" />
+																	Complete
+																</Button>
+															)}
+														</div>
+														{canMarkNoShow && (
+															<Button size="sm" variant="outline" className="w-full border-orange-500 text-orange-700 hover:bg-orange-50" onClick={() => handleNoShow(booking)} disabled={processingId === booking._id}>
+																<X className="w-4 h-4 mr-1" />
+																Mark No-Show
+															</Button>
+														)}
+														{(booking.status === "confirmed" || booking.status === "no-show") && (
+															<Button size="sm" variant="secondary" className="w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" onClick={() => handleOpenReschedule(booking)} disabled={processingId === booking._id}>
+																<CalendarIcon className="w-4 h-4 mr-1" />
+																Reschedule
+															</Button>
+														)}
+													</>
+												) : (
+													<Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled>
+														<CheckCircle className="w-4 h-4 mr-1" />
+														Completed
+													</Button>
+												)}
+											</div>
+
+											{/* Metadata */}
+											<div className="text-xs text-gray-400 pt-2 border-t">
+												Submitted: {formatAppointmentDate(booking.createdAt)}
+												{booking.status === "no-show" && booking.noShowAt && <span className="block text-orange-700 mt-1">No-show recorded: {formatAppointmentDate(booking.noShowAt)}</span>}
+											</div>
+										</CardContent>
+									</Card>
+								);
+							})}
 						</div>
 					) : (
 						<Card>
@@ -789,9 +1015,14 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 				<TabsContent value="availability">
 					<div className="grid md:grid-cols-2 gap-8">
 						<Card>
-							<CardHeader>
-								<CardTitle>Add Available Date</CardTitle>
-								<CardDescription>Select a date and add available time slots for school tours</CardDescription>
+							<CardHeader className="flex flex-row items-start justify-between">
+								<div>
+									<CardTitle>Add Available Date</CardTitle>
+									<CardDescription>Select a date and add available time slots for school tours</CardDescription>
+								</div>
+								<Button type="button" variant="ghost" size="icon" onClick={() => setShowInfoModal(true)} aria-label="How to add availability">
+									<Info className="w-5 h-5 text-gray-600" />
+								</Button>
 							</CardHeader>
 							<CardContent>
 								<form onSubmit={handleSubmit} className="space-y-6">
@@ -864,36 +1095,56 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 
 						<Card>
 							<CardHeader>
-								<CardTitle>Instructions</CardTitle>
+								<CardTitle>Availability Overview</CardTitle>
+								<CardDescription>Dates and time slots currently open for booking</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-4">
-								<p className="font-semibold text-green-700">How to add available tour dates:</p>
-								<ol className="list-decimal list-inside space-y-2 text-sm">
-									<li>Select a date from the calendar (today or any future date)</li>
-									<li>
-										Add time slots in the format <strong>HH:MM AM/PM</strong>
-									</li>
-									<li>
-										Times must be between <strong>07:00 AM</strong> and <strong>07:00 PM</strong>
-									</li>
-									<li>Click &quot;Add Slot&quot; to add each time</li>
-									<li>Remove unwanted slots by clicking the × button</li>
-									<li>Click &quot;Save&quot; to make these times available for booking</li>
-								</ol>{" "}
-								<div className="mt-4 p-3 bg-blue-50 rounded-lg">
-									<p className="text-sm font-semibold text-blue-800 mb-2">Examples of valid times:</p>
-									<ul className="text-xs text-blue-700 space-y-1">
-										<li>✓ 09:00 AM</li>
-										<li>✓ 02:30 PM</li>
-										<li>✓ 11:45 AM</li>
-										<li>✗ 9 AM (missing minutes)</li>
-										<li>✗ 14:00 (use 12-hour format with AM/PM)</li>
-										<li>✗ 08:00 PM (after 7:00 PM)</li>
-									</ul>
-								</div>
-								<p className="text-xs text-gray-500 mt-4">
-									<strong>Note:</strong> Parents will only be able to select dates and times that you make available here.
-								</p>
+							<CardContent className="space-y-3">
+								{availabilityList.length === 0 ? (
+									<p className="text-sm text-gray-500">No availability has been set yet.</p>
+								) : (
+									availabilityList.map((avail) => {
+										const dateLabel = formatAvailabilityDate(avail.date);
+										// Build set of booked times from slots and confirmed bookings
+										const dateKey = toDateOnly(avail.date);
+										const bookingTimes = confirmedBookings.filter((b: any) => toDateOnly(b.confirmedDate || b.preferredDate) === dateKey).map((b: any) => b.confirmedTime || b.preferredTime);
+										const bookedSet = new Set([...(avail.timeSlots || []).filter((s: any) => s.isBooked).map((s: any) => s.time), ...bookingTimes]);
+
+										const totalSlots = avail.timeSlots?.length || 0;
+										const openSlots = avail.timeSlots?.filter((slot: any) => !bookedSet.has(slot.time)).length || 0;
+
+										return (
+											<div key={avail._id} className="border rounded-md p-3 bg-gray-50">
+												<div className="flex items-start justify-between">
+													<div>
+														<p className="text-sm font-semibold text-gray-800">{dateLabel}</p>
+														<p className="text-xs text-gray-600">
+															Open slots: {openSlots} / {totalSlots}
+														</p>
+													</div>
+												</div>
+												{avail.timeSlots?.length ? (
+													<div className="mt-2 flex flex-wrap gap-2">
+														{avail.timeSlots.map((slot: any, idx: number) => {
+															const isBooked = bookedSet.has(slot.time);
+															return (
+																<div key={idx} className="relative inline-flex items-center">
+																	<span className={`text-xs px-2 py-0.5 pr-6 rounded border ${isBooked ? "bg-red-50 text-red-700 border-red-200" : "bg-green-50 text-green-700 border-green-200"}`}>{slot.time}</span>
+																	{!isBooked && (
+																		<button type="button" onClick={() => handleRemoveAvailabilitySlot(avail.date, slot.time)} className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-white text-red-600 border border-red-200 shadow-sm flex items-center justify-center hover:bg-red-50" title="Remove time slot">
+																			<X className="h-3 w-3" />
+																		</button>
+																	)}
+																</div>
+															);
+														})}
+													</div>
+												) : (
+													<p className="text-xs text-gray-500 mt-2">No time slots</p>
+												)}
+											</div>
+										);
+									})
+								)}
 							</CardContent>
 						</Card>
 					</div>
@@ -955,6 +1206,145 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 						<Button className="bg-green-600 hover:bg-green-700" onClick={handleDateSelectionConfirm}>
 							Continue
 						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Reschedule Modal */}
+			<Dialog
+				open={showRescheduleModal}
+				onOpenChange={(open) => {
+					setShowRescheduleModal(open);
+					if (!open) {
+						setRescheduleBooking(null);
+						setRescheduleDate(undefined);
+						setRescheduleTime("");
+					}
+				}}
+			>
+				<DialogContent className="sm:max-w-[500px]">
+					<DialogHeader>
+						<DialogTitle className="text-xl font-bold text-green-700">Reschedule Tour</DialogTitle>
+						<DialogDescription>{hasRescheduleAvailability ? "Select an available date and time." : "No availability right now."}</DialogDescription>
+					</DialogHeader>
+					{!hasRescheduleAvailability ? (
+						<div className="py-6 text-center space-y-2">
+							<p className="text-lg font-semibold text-gray-800">No availability</p>
+							<p className="text-sm text-gray-600">There are no dates or time slots available right now.</p>
+						</div>
+					) : (
+						<div className="space-y-4">
+							<div>
+								<Label className="mb-2 block">Available Dates</Label>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[320px] overflow-auto pr-1">
+									{getRescheduleEligibleDates().map((avail) => {
+										const openSlots = getRescheduleSelectableSlots(avail.date);
+										const isSelected = rescheduleDate ? toDateOnly(rescheduleDate) === toDateOnly(avail.date) : false;
+										const isFull = openSlots.length === 0;
+										return (
+											<button
+												type="button"
+												key={avail._id}
+												onClick={() => {
+													setRescheduleDate(new Date(avail.date));
+													const slots = getRescheduleSelectableSlots(avail.date);
+													setRescheduleTime(slots[0] || "");
+												}}
+												className={`text-left border rounded-md p-3 transition hover:shadow-sm ${isSelected ? "border-green-600 bg-green-50" : "border-gray-200 bg-white"} ${isFull ? "opacity-70 cursor-not-allowed" : ""}`}
+												disabled={isFull}
+											>
+												<div className="text-sm font-semibold text-gray-900">{formatAvailabilityDate(avail.date)}</div>
+												<div className="text-xs text-gray-600 mt-1 flex items-center gap-2">
+													<span>Open slots: {openSlots.length}</span>
+													{isFull && <span className="text-[11px] px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">Full</span>}
+												</div>
+												<div className="mt-2 flex flex-wrap gap-1">
+													{openSlots.slice(0, 4).map((slot: string, idx: number) => (
+														<span key={`${slot}-${idx}`} className="text-[11px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">
+															{slot}
+														</span>
+													))}
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+							<div>
+								<Label className="mb-2 block">Available Times</Label>
+								{rescheduleDate ? (
+									<div className="flex flex-wrap gap-2 max-h-[200px] overflow-auto pr-1">
+										{getRescheduleSelectableSlots(rescheduleDate).length === 0 && <p className="text-xs text-gray-500">No open slots for this date.</p>}
+										{getRescheduleSelectableSlots(rescheduleDate).map((slot: string, idx: number) => {
+											const isSelected = rescheduleTime === slot;
+											return (
+												<button type="button" key={`${slot}-${idx}`} onClick={() => setRescheduleTime(slot)} className={`text-xs px-3 py-1 rounded border transition ${isSelected ? "bg-green-600 text-white border-green-700" : "bg-white text-gray-700 border-gray-200 hover:border-green-300"}`}>
+													{slot}
+												</button>
+											);
+										})}
+									</div>
+								) : (
+									<p className="text-xs text-gray-500">Select a date to see available times.</p>
+								)}
+							</div>
+						</div>
+					)}
+					<DialogFooter className="flex gap-2 justify-end">
+						{hasRescheduleActions ? (
+							<>
+								<Button variant="outline" onClick={() => setShowRescheduleModal(false)}>
+									Cancel
+								</Button>
+								<Button className="bg-green-600 hover:bg-green-700" onClick={handleSubmitReschedule} disabled={!rescheduleDate || !rescheduleTime}>
+									Reschedule
+								</Button>
+							</>
+						) : (
+							<Button className="bg-gray-700 hover:bg-gray-800" onClick={() => setShowRescheduleModal(false)}>
+								Close
+							</Button>
+						)}
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Info Modal */}
+			<Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+				<DialogContent className="sm:max-w-[520px]">
+					<DialogHeader>
+						<DialogTitle className="text-xl font-bold text-green-700">How to add available tour dates</DialogTitle>
+						<DialogDescription>Follow these steps to add or update availability.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 text-sm text-gray-700">
+						<ol className="list-decimal list-inside space-y-2">
+							<li>Select a date from the calendar (today or any future date).</li>
+							<li>
+								Add time slots in the format <strong>HH:MM AM/PM</strong>.
+							</li>
+							<li>
+								Times must be between <strong>07:00 AM</strong> and <strong>07:00 PM</strong>.
+							</li>
+							<li>Click "Add Slot" to add each time, or remove with the × button.</li>
+							<li>Click "Save" to make these times available for booking.</li>
+						</ol>
+						<div className="mt-2 p-3 bg-blue-50 rounded-lg">
+							<p className="font-semibold text-blue-800 mb-2">Examples of valid times:</p>
+							<ul className="text-xs text-blue-700 space-y-1">
+								<li>✓ 09:00 AM</li>
+								<li>✓ 02:30 PM</li>
+								<li>✓ 11:45 AM</li>
+								<li>✗ 9 AM (missing minutes)</li>
+								<li>✗ 14:00 (use 12-hour format with AM/PM)</li>
+								<li>✗ 08:00 PM (after 7:00 PM)</li>
+							</ul>
+						</div>
+						<p className="text-xs text-gray-500">
+							<strong>Note:</strong> Parents will only be able to select dates and times that you make available here.
+						</p>
+					</div>
+					<DialogFooter>
+						<Button onClick={() => setShowInfoModal(false)}>Close</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
