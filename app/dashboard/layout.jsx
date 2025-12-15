@@ -105,13 +105,7 @@ export default function DashboardLayout({ children }) {
 					</div>
 					{user && (
 						<div className="relative mr-4" id="admin-profile-menu">
-							<button
-								type="button"
-								onClick={() => setProfileOpen((open) => !open)}
-								className="flex items-center gap-3 rounded-full px-2 sm:px-3 py-2 hover:bg-slate-700 transition"
-								aria-expanded={profileOpen}
-								aria-haspopup="menu"
-							>
+							<button type="button" onClick={() => setProfileOpen((open) => !open)} className="flex items-center gap-3 rounded-full px-2 sm:px-3 py-2 hover:bg-slate-700 transition" aria-expanded={profileOpen} aria-haspopup="menu">
 								<div className="flex w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full items-center justify-center text-white shadow">
 									<p className="text-lg md:text-xl font-semibold">{user?.email?.charAt(0).toUpperCase()}</p>
 								</div>
@@ -127,11 +121,7 @@ export default function DashboardLayout({ children }) {
 										<p className="text-sm font-semibold text-slate-900">{user?.name || "Admin"}</p>
 										<p className="text-xs text-slate-500 truncate">{user?.email}</p>
 									</div>
-									<button
-										onClick={handleLogout}
-										className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-										role="menuitem"
-									>
+									<button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50" role="menuitem">
 										<LogOut className="w-4 h-4 text-red-500" />
 										<span>Sign out</span>
 									</button>
