@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveMenu } from "@/context/ActiveMenuContext";
 import { Toaster } from "@/components/ui/toaster";
-import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, ArrowBigLeft, Book, Newspaper, Timer, File, User, LogOut } from "lucide-react";
+import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, ArrowBigLeft, Book, Newspaper, Timer, File, User, LogOut, ChevronDown } from "lucide-react";
 
 const menuItems = [
 	{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,6 +27,7 @@ export default function DashboardLayout({ children }) {
 	const { activeMenu, setActiveMenu } = useActiveMenu();
 	const router = useRouter();
 	const [user, setUser] = useState(null);
+	const [profileOpen, setProfileOpen] = useState(false);
 
 	useEffect(() => {
 		// Fetch user info from API
@@ -54,7 +55,15 @@ export default function DashboardLayout({ children }) {
 	};
 
 	return (
-		<div className="mx-auto flex flex-col md:flex-row h-screen overflow-hidden">
+		<div
+			className="mx-auto flex flex-col md:flex-row h-screen overflow-hidden"
+			onClick={(e) => {
+				// close profile dropdown when clicking outside of the profile container
+				if (profileOpen && !(e.target.closest && e.target.closest("#admin-profile-menu"))) {
+					setProfileOpen(false);
+				}
+			}}
+		>
 			{/* Sidebar */}
 			<div className="hidden md:flex w-64 flex-col bg-slate-800 shadow-lg">
 				<div className="flex p-7 flex-shrink-0">
@@ -95,19 +104,39 @@ export default function DashboardLayout({ children }) {
 						<h2 className="text-xl md:text-2xl font-semibold text-slate-200 sm:ml-8">{menuItems.find((item) => item.id === activeMenu)?.label}</h2>
 					</div>
 					{user && (
-						<div className="flex gap-2 items-center justify-center mr-4">
-							<div className="flex p-1 w-10 h-10 md:w-12 md:h-12 bg-red-400 rounded-full items-center justify-center">
-								<p className="text-3xl font-bold">{user?.email?.charAt(0).toUpperCase()}</p>
-							</div>
-							<p className="text-sm mr-4 font-semibold text-slate-200">
-								Welcome,
-								<br />
-								<span className="text-slate-300"> {user?.email || "Guest"}!</span>
-							</p>
-							<button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors duration-200 text-sm font-medium" title="Sign Out">
-								<LogOut className="w-4 h-4" />
-								<span className="hidden md:inline">Sign Out</span>
+						<div className="relative mr-4" id="admin-profile-menu">
+							<button
+								type="button"
+								onClick={() => setProfileOpen((open) => !open)}
+								className="flex items-center gap-3 rounded-full px-2 sm:px-3 py-2 hover:bg-slate-700 transition"
+								aria-expanded={profileOpen}
+								aria-haspopup="menu"
+							>
+								<div className="flex w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full items-center justify-center text-white shadow">
+									<p className="text-lg md:text-xl font-semibold">{user?.email?.charAt(0).toUpperCase()}</p>
+								</div>
+								<div className="hidden sm:flex flex-col items-start leading-tight text-left">
+									<span className="text-sm font-semibold text-slate-100">{user?.name || "Admin"}</span>
+									<span className="text-xs text-slate-300">{user?.email}</span>
+								</div>
+								<ChevronDown className={`w-4 h-4 text-slate-200 transition-transform hidden sm:block ${profileOpen ? "rotate-180" : ""}`} />
 							</button>
+							{profileOpen && (
+								<div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 z-30">
+									<div className="px-4 py-3 border-b border-slate-100">
+										<p className="text-sm font-semibold text-slate-900">{user?.name || "Admin"}</p>
+										<p className="text-xs text-slate-500 truncate">{user?.email}</p>
+									</div>
+									<button
+										onClick={handleLogout}
+										className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+										role="menuitem"
+									>
+										<LogOut className="w-4 h-4 text-red-500" />
+										<span>Sign out</span>
+									</button>
+								</div>
+							)}
 						</div>
 					)}
 				</header>{" "}

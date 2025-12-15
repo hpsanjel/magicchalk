@@ -543,16 +543,9 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		}
 	};
 
-	// Determine if a booking has been rescheduled (persisted flag or schedule change)
+	// Determine if a booking has been rescheduled (persisted flag only to avoid false positives on first confirmation)
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const isBookingRescheduled = (booking: any) => {
-		const flag = Boolean(booking?.rescheduled);
-		const preferredDateKey = booking?.preferredDate ? toDateOnly(booking.preferredDate) : null;
-		const confirmedDateKey = booking?.confirmedDate ? toDateOnly(booking.confirmedDate) : null;
-		const dateChanged = preferredDateKey && confirmedDateKey ? preferredDateKey !== confirmedDateKey : false;
-		const timeChanged = booking?.confirmedTime && booking?.preferredTime ? booking.confirmedTime !== booking.preferredTime : false;
-		return flag || dateChanged || timeChanged;
-	};
+	const isBookingRescheduled = (booking: any) => Boolean(booking?.rescheduled);
 
 	// Confirm booking
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -763,6 +756,34 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		}
 	};
 
+	// Cancel a confirmed booking
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const handleCancel = async (booking: any) => {
+		if (!confirm("Cancel this tour booking?")) return;
+		setProcessingId(booking._id);
+		try {
+			const response = await fetch("/api/tour-bookings", {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ id: booking._id, status: "cancelled" }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to cancel booking");
+			}
+
+			toast({ title: "Booking cancelled", description: `${booking.parentFirstName} ${booking.parentLastName}'s tour has been cancelled.` });
+			onRefresh?.();
+		} catch (error) {
+			console.error("Error cancelling booking:", error);
+			toast({ variant: "destructive", title: "Failed to cancel", description: "Please try again." });
+		} finally {
+			setProcessingId(null);
+		}
+	};
+
 	// Delete booking
 	const handleDelete = async (bookingId: string, parentName: string) => {
 		if (!confirm(`Are you sure you want to delete the booking for ${parentName}? This action cannot be undone.`)) {
@@ -839,6 +860,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 							{filteredAppointments.map((booking: any) => {
 								const canMarkNoShow = booking.status === "confirmed" && isTourInPast(booking);
 								const rescheduled = isBookingRescheduled(booking);
+								const canCancel = booking.status === "confirmed";
 								return (
 									<Card key={booking._id} className="hover:shadow-lg transition-shadow">
 										{/* Status Bar at Top */}
@@ -971,11 +993,21 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 																</Button>
 															)}
 														</div>
-														{canMarkNoShow && (
-															<Button size="sm" variant="outline" className="w-full border-orange-500 text-orange-700 hover:bg-orange-50" onClick={() => handleNoShow(booking)} disabled={processingId === booking._id}>
-																<X className="w-4 h-4 mr-1" />
-																Mark No-Show
-															</Button>
+														{(canMarkNoShow || canCancel) && (
+															<div className="flex gap-2">
+																{canMarkNoShow && (
+																	<Button size="sm" variant="outline" className="flex-1 border-orange-500 text-orange-700 hover:bg-orange-50" onClick={() => handleNoShow(booking)} disabled={processingId === booking._id}>
+																		<X className="w-4 h-4 mr-1" />
+																		Mark No-Show
+																	</Button>
+																)}
+																{canCancel && (
+																	<Button size="sm" variant="outline" className="flex-1 border-red-500 text-red-700 hover:bg-red-50" onClick={() => handleCancel(booking)} disabled={processingId === booking._id}>
+																		<X className="w-4 h-4 mr-1" />
+																		Cancel
+																	</Button>
+																)}
+															</div>
 														)}
 														{(booking.status === "confirmed" || booking.status === "no-show") && (
 															<Button size="sm" variant="secondary" className="w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" onClick={() => handleOpenReschedule(booking)} disabled={processingId === booking._id}>
