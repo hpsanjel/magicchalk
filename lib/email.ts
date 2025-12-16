@@ -253,3 +253,82 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937; }
 		throw new Error("Failed to send parent welcome email");
 	}
 }
+
+export async function sendTeacherInviteEmail(
+	to: string,
+	options: {
+		teacherName: string;
+		employeeId: string;
+		designation?: string;
+		username: string;
+		passwordSetUrl: string;
+	}
+) {
+	const name = options.teacherName || "Teacher";
+	const role = options.designation ? `${options.designation}` : "Teacher";
+
+	const mailOptions = {
+		from: `"Magic Chalk School" <${process.env.EMAIL_USER}>`,
+		to,
+		subject: "Your Magic Chalk teacher account",
+		text: `Hello ${name},
+
+Your teacher account has been created.
+Role: ${role}
+Employee ID: ${options.employeeId}
+Username: ${options.username}
+
+Please set your password using this link:
+${options.passwordSetUrl}
+
+Welcome aboard!`,
+		html: `<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937; }
+.card { max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; }
+.header { border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px; }
+.title { font-size: 20px; font-weight: 700; color: #16a34a; margin: 0; }
+.muted { color: #6b7280; font-size: 14px; margin: 4px 0 0 0; }
+.section { margin-top: 16px; }
+.label { font-weight: 600; color: #111827; }
+.btn { display: inline-block; margin-top: 12px; padding: 10px 16px; background: #16a34a; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+.pill { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #ecfdf3; color: #15803d; font-size: 12px; font-weight: 600; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <p class="title">Welcome to Magic Chalk</p>
+    <p class="muted">Teacher Account</p>
+  </div>
+  <div class="section">
+    <p>Hello ${name},</p>
+    <p>Your teacher account has been created. You can now set your password and log in.</p>
+    <div class="pill">${role}</div>
+  </div>
+  <div class="section">
+    <p class="label">Your login details</p>
+    <p>Username: <strong>${options.username}</strong></p>
+    <p>Employee ID: <strong>${options.employeeId}</strong></p>
+    <a class="btn" href="${options.passwordSetUrl}">Set your password</a>
+    <p class="muted">Use the link above to set your password and access the teacher dashboard.</p>
+  </div>
+  <div class="section">
+    <p>If you have any questions, just reply to this email.</p>
+    <p>Best regards,<br/>Magic Chalk School</p>
+  </div>
+</div>
+</body>
+</html>`,
+	};
+
+	try {
+		await transporter.sendMail(mailOptions);
+		console.log(`Teacher invite email sent to ${to}`);
+	} catch (error) {
+		console.error("Error sending teacher invite email:", error);
+		throw new Error("Failed to send teacher invite email");
+	}
+}

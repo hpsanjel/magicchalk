@@ -169,6 +169,8 @@ export default function StudentsAdminPage() {
 	const [singleForm, setSingleForm] = useState(emptyFormState);
 	const [editingId, setEditingId] = useState<string>("");
 	const [loadingEdit, setLoadingEdit] = useState(false);
+	const [classes, setClasses] = useState<{ _id: string; name: string }[]>([]);
+	const [classesError, setClassesError] = useState<string>("");
 	const isEditing = Boolean(editingId);
 	const sampleCsv = useMemo(() => {
 		const headers = Object.keys(sampleStudents[0]);
@@ -176,6 +178,13 @@ export default function StudentsAdminPage() {
 		return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 	}, []);
 	const router = useRouter();
+	const classOptions = useMemo(() => {
+		const names = classes.map((c) => c.name);
+		if (singleForm.classGroup && !names.includes(singleForm.classGroup)) {
+			return [singleForm.classGroup, ...names];
+		}
+		return names;
+	}, [classes, singleForm.classGroup]);
 
 	useEffect(() => {
 		const idParam = searchParams.get("id");
@@ -222,6 +231,29 @@ export default function StudentsAdminPage() {
 			}
 		})();
 	}, [searchParams]);
+
+	useEffect(() => {
+		let ignore = false;
+		(async () => {
+			try {
+				setClassesError("");
+				const res = await fetch("/api/classes");
+				const data = await res.json();
+				if (!res.ok || !data?.success || !Array.isArray(data.classes)) {
+					throw new Error(data?.error || "Unable to load classes");
+				}
+				if (!ignore) {
+					setClasses(data.classes);
+				}
+			} catch (error) {
+				const message = error instanceof Error ? error.message : "Failed to load classes";
+				if (!ignore) setClassesError(message);
+			}
+		})();
+		return () => {
+			ignore = true;
+		};
+	}, []);
 
 	const handleDownloadSample = () => {
 		const blob = new Blob([sampleCsv], { type: "text/csv;charset=utf-8;" });
@@ -446,7 +478,15 @@ export default function StudentsAdminPage() {
 							</div>
 							<div className="space-y-1">
 								<label className={labelClass}>Class / Group *</label>
-								<input className={inputClass} placeholder="Pre-K A" value={singleForm.classGroup} onChange={handleSingleChange("classGroup")} />
+								<select className={inputClass} value={singleForm.classGroup} onChange={handleSingleChange("classGroup")}>
+									<option value="">Select class</option>
+									{classOptions.map((name) => (
+										<option key={name} value={name}>
+											{name}
+										</option>
+									))}
+								</select>
+								{classesError && <p className="text-xs text-red-600">{classesError}</p>}
 							</div>
 							<div className="space-y-1">
 								<label className={labelClass}>Enrollment date *</label>
