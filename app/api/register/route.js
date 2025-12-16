@@ -11,10 +11,13 @@ export async function POST(req) {
 		const data = await req.json();
 		console.log(data);
 
-		const { fullName, email, userName, password } = data;
+		const { fullName, email, userName, password, role } = data;
 		if (!fullName || !email || !userName || !password) {
 			return NextResponse.json({ error: "All fields are required." }, { status: 400 });
 		}
+
+		const allowedRoles = ["parent", "teacher", "admin"];
+		const userRole = allowedRoles.includes(role) ? role : "parent";
 
 		// Check if the email already exists
 		const existingUser = await User.findOne({ email });
@@ -31,6 +34,7 @@ export async function POST(req) {
 			email,
 			userName,
 			password: hashedPassword,
+			role: userRole,
 		});
 
 		// Save the user to the database

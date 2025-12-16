@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Gallery from "@/models/Gallery.Model";
+import ClassModel from "@/models/Class.Model";
 import { v2 as cloudinary } from "cloudinary";
 
 import { uploadToCloudinary } from "@/utils/saveFileToCloudinaryUtils";
@@ -24,11 +25,22 @@ export async function PUT(request, { params }) {
 		const formData = await request.formData();
 		const galleryData = {};
 		const mediaFiles = formData.getAll("media");
+		const classId = formData.get("classId");
 
 		for (const [key, value] of formData.entries()) {
 			if (key !== "media") {
 				galleryData[key] = value;
 			}
+		}
+
+		let classDoc = null;
+		if (classId) {
+			classDoc = await ClassModel.findById(classId);
+			if (!classDoc) {
+				return NextResponse.json({ success: false, error: "Class not found" }, { status: 400 });
+			}
+			galleryData.classId = classDoc._id;
+			galleryData.classLabel = classDoc.name;
 		}
 
 		const existingGallery = await Gallery.findById(id);
@@ -44,6 +56,13 @@ export async function PUT(request, { params }) {
 
 			// Upload new images
 			galleryData.media = await Promise.all(mediaFiles.map(async (file) => await uploadToCloudinary(file, "gallery_images")));
+		}
+
+		if (!galleryData.category && (classDoc || existingGallery.classLabel)) {
+			galleryData.category = classDoc?.name || existingGallery.classLabel;
+		}
+		if (!galleryData.alt) {
+			galleryData.alt = classDoc?.name || galleryData.category || existingGallery.alt;
 		}
 
 		const updatedGallery = await Gallery.findByIdAndUpdate(id, galleryData, { new: true });

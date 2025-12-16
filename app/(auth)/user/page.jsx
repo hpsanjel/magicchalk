@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo, useEffect } from "react";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs"; // Import Tabs components
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const InputField = memo(({ id, icon: Icon, name, value, onChange, ...props }) => (
 	<div className="relative">
@@ -19,16 +19,24 @@ const InputField = memo(({ id, icon: Icon, name, value, onChange, ...props }) =>
 InputField.displayName = "Input_Fields_User_Auth_Form";
 
 export default function AuthForm() {
+	const searchParams = useSearchParams();
+	const initialEmail = searchParams.get("email") || "";
 	const [formData, setFormData] = useState({
 		fullName: "",
-		email: "",
+		email: initialEmail,
 		userName: "",
 		password: "",
 	});
 	const [error, setError] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
+	const [submitting, setSubmitting] = useState(false);
 
 	const router = useRouter();
+
+	useEffect(() => {
+		const email = searchParams.get("email") || "";
+		setFormData((prev) => (prev.email === email ? prev : { ...prev, email }));
+	}, [searchParams]);
 
 	// Optimized input change handler
 	const handleInputChange = useCallback((e) => {
@@ -44,7 +52,8 @@ export default function AuthForm() {
 		setError("");
 
 		try {
-			const response = await fetch("/api/login", {
+			setSubmitting(true);
+			const response = await fetch("/api/user/login", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -56,20 +65,23 @@ export default function AuthForm() {
 			});
 
 			const result = await response.json();
-			console.log(result);
-			if (result.success) {
-				// Use window.location for production compatibility
+			if (result?.success) {
+				const role = result?.user?.role;
+				const target = role === "parent" ? "/parents/dashboard" : "/dashboard";
 				if (typeof window !== "undefined") {
-					window.location.href = "/dashboard";
+					window.location.href = target;
 				} else {
-					router.push("/dashboard");
+					router.push(target);
 				}
 			} else {
-				setError(result.message || "Please use correct user credentials");
+				const message = result?.error || result?.message || `Login failed (${response.status})`;
+				setError(message || "Login failed. Please try again.");
 			}
 		} catch (error) {
 			console.error("Login error:", error);
 			setError(error.message || "An unexpected error occurred. Please try again.");
+		} finally {
+			setSubmitting(false);
 		}
 	};
 
@@ -120,8 +132,8 @@ export default function AuthForm() {
 									<Button type="button" variant="outline" onClick={handleCancel}>
 										Cancel
 									</Button>
-									<Button type="submit" className="bg-green-700 hover:bg-orange-400">
-										Login
+									<Button type="submit" className="bg-green-700 hover:bg-orange-400" disabled={submitting}>
+										{submitting ? "Logging in..." : "Login"}
 									</Button>
 								</div>
 							</form>

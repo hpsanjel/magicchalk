@@ -5,8 +5,7 @@ import { Facebook, Instagram, Menu, Search, X, ChevronDown, User, LogOut } from 
 import Image from "next/image";
 import Link from "next/link";
 import SearchModal from "@/components/SearchModal";
-import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface HeaderProps {
 	isMenuOpen: boolean;
@@ -68,9 +67,10 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 	const [showUserDropdown, setShowUserDropdown] = useState(false);
+	const [user, setUser] = useState<{ email: string; role?: string; children?: { id: string; name: string; classGroup: string | null }[] } | null>(null);
 	const pathname = usePathname();
 	const headerRef = useRef<HTMLDivElement>(null);
-	const { data: session } = useSession();
+	const router = useRouter();
 
 	const openModal = () => setIsModalOpen(true);
 	const closeModal = () => setIsModalOpen(false);
@@ -96,6 +96,25 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 
 		window.addEventListener("scroll", handleScroll);
 		return () => window.removeEventListener("scroll", handleScroll);
+	}, []);
+
+	useEffect(() => {
+		const fetchUser = async () => {
+			try {
+				const res = await fetch("/api/auth/me");
+				if (!res.ok) {
+					setUser(null);
+					return;
+				}
+				const data = await res.json();
+				setUser(data?.user || null);
+			} catch (error) {
+				setUser(null);
+				console.error("Failed to fetch user:", error);
+			}
+		};
+
+		fetchUser();
 	}, []);
 
 	// Close dropdown when route changes
@@ -162,6 +181,21 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 		}
 	};
 
+	const dashboardHref = user?.role === "parent" ? "/parents/dashboard" : "/dashboard";
+	const roleLabel = user?.role === "parent" ? "Parent" : user?.role === "teacher" ? "Teacher" : user?.role === "admin" ? "Administrator" : "User";
+	const avatarInitial = user?.email?.charAt(0).toUpperCase() || "?";
+	const avatarLabel = user?.email?.split("@")[0] || "Profile";
+
+	const handleSignOut = async () => {
+		try {
+			await fetch("/api/logout", { method: "POST" });
+			setUser(null);
+			router.push("/");
+		} catch (error) {
+			console.error("Logout failed:", error);
+		}
+	};
+
 	return (
 		<motion.header ref={headerRef} className={`fixed w-full z-50 transition-colors duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-green-700"}`} initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.5 }} onClick={handleHeaderClick}>
 			<div className="container mx-auto p-4 flex justify-between items-center">
@@ -197,7 +231,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 					<Link href="https://www.instagram.com/magic_chalk_edu/" className={`border-b border-transparent hover:border-b hover:scale-110 transition-transform duration-200 ${isScrolled ? "text-black" : "text-white hover:text-slate-100"}`} aria-label="Instagram" onClick={() => setActiveDropdown(null)}>
 						<Instagram />
 					</Link>
-					{session ? (
+					{user ? (
 						<div className="relative">
 							<button
 								onClick={(e) => {
@@ -205,27 +239,42 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 									setShowUserDropdown(!showUserDropdown);
 									setActiveDropdown(null);
 								}}
-								className={`flex items-center gap-2 px-4 py-2 rounded-full ${isScrolled ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-white/20 text-white hover:bg-white/30"} transition-colors duration-200`}
+								className={`flex items-center gap-2 px-3 py-2 rounded-full ${isScrolled ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-white/20 text-white hover:bg-white/30"} transition-colors duration-200`}
 							>
-								<div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold">{session.user?.email?.charAt(0).toUpperCase()}</div>
-								<span className="hidden md:inline font-medium">{session.user?.email?.split("@")[0]}</span>
+								<div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center text-white font-semibold shadow-sm">{avatarInitial}</div>
+								<span className="hidden md:inline font-medium">{avatarLabel}</span>
 								<ChevronDown size={16} className={showUserDropdown ? "transform rotate-180 transition-transform" : "transition-transform"} />
 							</button>
 
 							{showUserDropdown && (
-								<div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
+								<div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
 									<div className="px-4 py-3 border-b border-gray-100">
-										<p className="text-sm font-semibold text-gray-900">{session.user?.email}</p>
-										<p className="text-xs text-gray-500 mt-1">Administrator</p>
+										<p className="text-sm font-semibold text-gray-900">{user.email}</p>
+										<p className="text-xs text-gray-500 mt-1">{roleLabel}</p>
 									</div>
-									<Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setShowUserDropdown(false)}>
+									{user.role === "parent" && user.children && user.children.length > 0 && (
+										<div className="border-b border-gray-100">
+											<p className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-500">Children</p>
+											<ul className="max-h-40 overflow-y-auto">
+												{user.children.map((child) => (
+													<li key={child.id} className="px-4 py-2 text-sm text-gray-800 flex justify-between hover:bg-gray-50">
+														<Link href={`/parents/dashboard/students/${child.id}`} className="font-medium" onClick={() => setShowUserDropdown(false)}>
+															{child.name}
+														</Link>
+														<span className="text-xs text-gray-500">{child.classGroup || ""}</span>
+													</li>
+												))}
+											</ul>
+										</div>
+									)}
+									<Link href={dashboardHref} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setShowUserDropdown(false)}>
 										<User size={16} />
 										Dashboard
 									</Link>
 									<button
 										onClick={() => {
 											setShowUserDropdown(false);
-											signOut({ callbackUrl: "/" });
+											handleSignOut();
 										}}
 										className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
 									>
@@ -236,7 +285,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 							)}
 						</div>
 					) : (
-						<Link href="/dashboard" className={`px-4 py-2 rounded-md bg-yellow-400 text-green-800 font-medium hover:bg-yellow-500 transition-colors duration-200`} onClick={() => setActiveDropdown(null)}>
+						<Link href="/user" className={`px-4 py-2 rounded-md bg-yellow-400 text-green-800 font-medium hover:bg-yellow-500 transition-colors duration-200`} onClick={() => setActiveDropdown(null)}>
 							Login
 						</Link>
 					)}{" "}

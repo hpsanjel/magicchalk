@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 import connectDB from "@/lib/mongodb";
 import Student from "@/models/Student.Model";
+import { sendParentWelcomeEmail } from "@/lib/email";
 
 const REQUIRED_FIELDS = ["firstName", "lastName", "dob", "classGroup", "enrollmentDate", "guardianName", "guardianPhone", "address", "emergencyContact"];
+const JWT_SECRET = process.env.JWT_SECRET_KEY;
+
+async function getAuth(req) {
+	try {
+		const tokenObj = req.cookies.get("authToken");
+		const token = tokenObj?.value;
+		if (!token || !JWT_SECRET) return null;
+		const secretKey = new TextEncoder().encode(JWT_SECRET);
+		const { payload } = await jwtVerify(token, secretKey);
+		return { email: payload.email, role: payload.role };
+	} catch (error) {
+		return null;
+	}
+}
 
 function normalizeDate(value) {
 	if (!value) return null;
@@ -13,18 +29,24 @@ function normalizeDate(value) {
 export async function GET(request) {
 	try {
 		await connectDB();
+		const auth = await getAuth(request);
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
 
 		if (id) {
-			const student = await Student.findById(id);
+			const query = { _id: id };
+			if (auth?.role === "parent") {
+				query.guardianEmail = auth.email;
+			}
+			const student = await Student.findOne(query);
 			if (!student) {
 				return NextResponse.json({ success: false, error: "Student not found" }, { status: 404 });
 			}
 			return NextResponse.json({ success: true, student }, { status: 200 });
 		}
 
-		const students = await Student.find({}).sort({ createdAt: -1 });
+		const filter = auth?.role === "parent" ? { guardianEmail: auth.email } : {};
+		const students = await Student.find(filter).sort({ createdAt: -1 });
 		return NextResponse.json({ success: true, students }, { status: 200 });
 	} catch (error) {
 		console.error("Error fetching students:", error);
@@ -80,6 +102,21 @@ export async function POST(request) {
 
 		const created = await Student.insertMany(docs, { ordered: false });
 
+		const passwordSetBase = process.env.PARENT_PORTAL_PASSWORD_SET_URL || `${process.env.NEXT_PUBLIC_API_URL || "https://magicchalk.vercel.app"}/parent/set-password`;
+		Promise.allSettled(
+			created
+				.filter((s) => s.guardianEmail)
+				.map((s) =>
+					sendParentWelcomeEmail(s.guardianEmail, {
+						guardianName: s.guardianName,
+						studentName: `${s.firstName} ${s.lastName}`.trim() || "your child",
+						classGroup: s.classGroup,
+						username: s.guardianEmail,
+						passwordSetUrl: `${passwordSetBase}?email=${encodeURIComponent(s.guardianEmail)}`,
+					})
+				)
+		).catch((err) => console.error("Welcome email batch failed", err));
+
 		return NextResponse.json({ success: true, inserted: created.length, errors }, { status: errors.length ? 207 : 201 });
 	} catch (error) {
 		console.error("Error saving students:", error);
@@ -90,6 +127,7 @@ export async function POST(request) {
 export async function PUT(request) {
 	try {
 		await connectDB();
+		const auth = await getAuth(request);
 		const body = await request.json();
 		const { id, student } = body || {};
 
@@ -122,7 +160,12 @@ export async function PUT(request) {
 			emergencyContact: student.emergencyContact,
 		};
 
-		const updated = await Student.findByIdAndUpdate(id, update, { new: true });
+		const query = { _id: id };
+		if (auth?.role === "parent") {
+			query.guardianEmail = auth.email;
+		}
+
+		const updated = await Student.findOneAndUpdate(query, update, { new: true });
 		if (!updated) {
 			return NextResponse.json({ success: false, error: "Student not found" }, { status: 404 });
 		}

@@ -1,21 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import useFetchData from "@/hooks/useFetchData";
 
 export default function GalleryForm({ handleCloseGalleryModal, galleryToEdit }) {
 	const [formData, setFormData] = useState({
 		media: [],
 		category: "",
 		alt: "",
+		classId: "",
 	});
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState("");
+	const { data: classes } = useFetchData("/api/classes", "classes");
 
 	useEffect(() => {
 		if (galleryToEdit) {
+			const normalizedClassId = galleryToEdit.classId?._id || galleryToEdit.classId || "";
 			setFormData({
 				media: [],
-				category: galleryToEdit.category,
-				alt: galleryToEdit.category,
+				category: galleryToEdit.category || galleryToEdit.classLabel || "",
+				alt: galleryToEdit.alt || galleryToEdit.classLabel || galleryToEdit.category,
+				classId: normalizedClassId ? normalizedClassId.toString() : "",
 			});
 		}
 	}, [galleryToEdit]);
@@ -38,6 +43,9 @@ export default function GalleryForm({ handleCloseGalleryModal, galleryToEdit }) 
 			const form = new FormData();
 			form.append("category", formData.category);
 			form.append("alt", formData.category);
+			if (formData.classId) {
+				form.append("classId", formData.classId);
+			}
 
 			formData.media.forEach((file) => {
 				form.append("media", file);
@@ -61,6 +69,7 @@ export default function GalleryForm({ handleCloseGalleryModal, galleryToEdit }) 
 					media: [],
 					category: "",
 					alt: "",
+					classId: "",
 				});
 				alert(`Gallery item ${galleryToEdit ? "updated" : "created"} successfully!`);
 				handleCloseGalleryModal();
@@ -87,7 +96,25 @@ export default function GalleryForm({ handleCloseGalleryModal, galleryToEdit }) 
 				<label htmlFor="category" className="block mb-2 font-bold">
 					Enter Tag - meaningful category for images
 				</label>
-				<input type="text" id="category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full p-2 border rounded" required />
+				<input type="text" id="category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full p-2 border rounded" placeholder="e.g. Field trip" required={!formData.classId} />
+			</div>
+
+			<div>
+				<label htmlFor="class" className="block mb-2 font-bold">
+					Assign Class (optional)
+				</label>
+				<select id="class" value={formData.classId} onChange={(e) => setFormData({ ...formData, classId: e.target.value })} className="w-full p-2 border rounded">
+					<option value="">No class tag</option>
+					{Array.isArray(classes) &&
+						classes.map((cls) => {
+							const value = cls?._id?.toString ? cls._id.toString() : "";
+							return (
+								<option key={value || cls.name} value={value}>
+									{cls.name}
+								</option>
+							);
+						})}
+				</select>
 			</div>
 
 			<div className="grid grid-cols-2 gap-2">

@@ -63,6 +63,7 @@ export default function GalleryPage() {
 						<TableRow>
 							<TableHead>Media</TableHead>
 							<TableHead>Category</TableHead>
+							<TableHead>Class</TableHead>
 							<TableHead>Alt</TableHead>
 							<TableHead>Actions</TableHead>
 						</TableRow>
@@ -75,6 +76,7 @@ export default function GalleryPage() {
 										<Image src={item?.media[0] || "/placeholder.jpg"} width={200} height={200} alt={item.alt || "Gallery item"} className="w-16 h-16 rounded-full object-cover" />{" "}
 									</TableCell>
 									<TableCell>{item?.category}</TableCell>
+									<TableCell>{item?.classLabel || item?.classId?.name || "—"}</TableCell>
 									<TableCell>{item?.alt}</TableCell>
 									<TableCell>
 										<div className="flex space-x-2">
