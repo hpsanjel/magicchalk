@@ -15,7 +15,7 @@ async function getAuth(req) {
 		const secretKey = new TextEncoder().encode(JWT_SECRET);
 		const { payload } = await jwtVerify(token, secretKey);
 		return { email: payload.email, role: payload.role };
-	} catch (error) {
+	} catch {
 		return null;
 	}
 }

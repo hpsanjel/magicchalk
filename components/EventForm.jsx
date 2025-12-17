@@ -1,7 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-export default function EventForm({ handleCloseEventModal, eventToEdit = null }) {
+export default function EventForm({ handleCloseEventModal, eventToEdit = null, classOptions = [], defaultClassId = "", requireClass = false }) {
+	const defaultClassLabel = useMemo(() => {
+		const match = classOptions.find((cls) => String(cls.id || cls._id || cls.value || "") === String(defaultClassId)) || classOptions[0];
+		return match?.name || match?.label || "";
+	}, [classOptions, defaultClassId]);
+
+	const toSafeString = (value) => (value === null || value === undefined ? "" : String(value));
+
 	const [formData, setFormData] = useState({
 		eventname: "",
 		eventdescription: "",
@@ -18,6 +25,8 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null })
 		eventtime: "",
 		eventspotifyUrl: "",
 		eventyoutubeUrl: "",
+		classId: defaultClassId || "",
+		classLabel: defaultClassLabel || "",
 		eventposter: null,
 		eventposter2: null,
 		eventposter3: null,
@@ -28,16 +37,35 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null })
 
 	useEffect(() => {
 		if (eventToEdit) {
-			setFormData({
-				...eventToEdit,
-				eventdate: eventToEdit.eventdate.split("T")[0], // Format date for input
-				eventposter: null, // Clear file input
-				eventposter2: null, // Clear file input
-				eventposter3: null, // Clear file input
+			const eventDateValue = eventToEdit.eventdate ? String(eventToEdit.eventdate).split("T")[0] : "";
+			const eventClassId = eventToEdit.classId?._id || eventToEdit.classId || "";
+			const eventClassLabel = eventToEdit.classLabel || eventToEdit.classId?.name || "";
+			const stringKeys = ["eventname", "eventdescription", "eventcountry", "eventvenue", "earlyBirdPrice", "vipPrice", "standardPrice", "frontRowPrice", "backRowPrice", "preSalePrice", "doorSalePrice", "eventtime", "eventspotifyUrl", "eventyoutubeUrl"];
+			const sanitizedStrings = stringKeys.reduce((acc, key) => {
+				acc[key] = toSafeString(eventToEdit[key]);
+				return acc;
+			}, {});
+			setFormData((prev) => ({
+				...prev,
+				...sanitizedStrings,
+				eventdate: eventDateValue,
+				classId: toSafeString(eventClassId),
+				classLabel: toSafeString(eventClassLabel),
+				eventposter: null,
+				eventposter2: null,
+				eventposter3: null,
 				eventvideo: null,
-			});
+			}));
 		}
 	}, [eventToEdit]);
+
+	useEffect(() => {
+		if (eventToEdit || (!defaultClassId && formData.classId)) return;
+		const match = classOptions.find((cls) => String(cls.id || cls._id || cls.value || "") === String(defaultClassId)) || classOptions[0];
+		if (match) {
+			setFormData((prev) => ({ ...prev, classId: match.id || match._id || match.value || "", classLabel: match.name || match.label || "" }));
+		}
+	}, [classOptions, defaultClassId, eventToEdit, formData.classId]);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -46,15 +74,11 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null })
 
 		try {
 			const form = new FormData();
-			// Object.keys(formData).forEach((key) => {
-			// 	if (key !== "eventposter" || (key === "eventposter" && formData[key])) {
-			// 		form.append(key, formData[key]);
-			// 	}
-			// });
-			Object.keys(formData).forEach((key) => {
-				// Append only non-null, non-undefined values
-				if (formData[key]) {
-					form.append(key, formData[key]);
+			const selectedClassLabel = formData.classLabel || (formData.classId ? classOptions.find((cls) => String(cls.id || cls._id || cls.value || "") === String(formData.classId))?.name || classOptions.find((cls) => String(cls.id || cls._id || cls.value || "") === String(formData.classId))?.label || "" : "");
+			const payload = { ...formData, classLabel: selectedClassLabel };
+			Object.keys(payload).forEach((key) => {
+				if (payload[key]) {
+					form.append(key, payload[key]);
 				}
 			});
 
@@ -88,6 +112,8 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null })
 					eventtime: "",
 					eventspotifyUrl: "",
 					eventyoutubeUrl: "",
+					classId: defaultClassId || "",
+					classLabel: defaultClassLabel || "",
 					eventposter: null,
 					eventposter2: null,
 					eventposter3: null,
@@ -151,6 +177,35 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null })
 					</label>
 					<input id="eventvenue" value={formData.eventvenue} onChange={(e) => setFormData({ ...formData, eventvenue: e.target.value })} className="w-full p-2 border rounded" />
 				</div>
+				{classOptions.length > 0 && (
+					<div className="md:col-span-2">
+						<label htmlFor="classId" className="block mb-2 font-bold">
+							Classroom (parents in this class will see it)
+						</label>
+						<select
+							id="classId"
+							value={formData.classId}
+							onChange={(e) => {
+								const value = e.target.value;
+								const match = classOptions.find((cls) => String(cls.id || cls._id || cls.value || "") === value);
+								setFormData({ ...formData, classId: value, classLabel: match?.name || match?.label || "" });
+							}}
+							required={requireClass}
+							className="w-full p-2 border rounded"
+						>
+							{!requireClass && <option value="">All classes / public</option>}
+							{classOptions.map((cls) => {
+								const value = String(cls.id || cls._id || cls.value || "");
+								return (
+									<option key={value || cls.name || cls.label} value={value}>
+										{cls.name || cls.label || "Class"}
+									</option>
+								);
+							})}
+						</select>
+						{requireClass && <p className="text-xs text-gray-600 mt-1">Required for teacher-created class events.</p>}
+					</div>
+				)}
 				<div>
 					<label htmlFor="eventdate" className="block mb-2 font-bold">
 						Event Date

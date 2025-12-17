@@ -136,15 +136,14 @@ ${isReschedule ? '<div class="pill">Rescheduled</div>' : ""}
 <span class="label">Tour Time:</span> ${tourTime}
 </div>
 </div>
-${
-	isReschedule && (previousDateFormatted || previousTimeFormatted)
-		? `
+${isReschedule && (previousDateFormatted || previousTimeFormatted)
+				? `
 <div class="previous">
 <strong>Previous schedule:</strong><br />
 ${previousDateFormatted || ""}${previousDateFormatted && previousTimeFormatted ? " at " : previousDateFormatted ? "" : ""}${previousTimeFormatted || ""}
 </div>`
-		: ""
-}
+				: ""
+			}
 <p><strong>Important Reminders:</strong></p>
 <ul>
 <li>Please arrive 10 minutes early</li>
@@ -332,3 +331,125 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937; }
 		throw new Error("Failed to send teacher invite email");
 	}
 }
+
+export async function sendAbsenceNoticeEmail(
+	to: string,
+	options: {
+		guardianName?: string;
+		studentName: string;
+		classGroup?: string;
+		date?: Date | string;
+		reason?: string;
+		teacherName?: string;
+	}
+) {
+	const guardian = options.guardianName || "Parent";
+	const classLabel = options.classGroup ? `Class: ${options.classGroup}` : "";
+	const formattedDate = options.date ? format(new Date(options.date), "EEEE, MMM d, yyyy") : "today";
+	const teacher = options.teacherName ? `Teacher: ${options.teacherName}` : "";
+	const reason = options.reason || "Not marked present";
+
+	const mailOptions = {
+		from: `"Magic Chalk School" <${process.env.EMAIL_USER}>`,
+		to,
+		subject: `Absence notice for ${options.studentName}`,
+		text: `Dear ${guardian},
+
+${options.studentName} was marked absent on ${formattedDate}.${classLabel ? `\n${classLabel}` : ""}
+${teacher ? `${teacher}\n` : ""}Reason: ${reason}
+
+If this is unexpected, please reply to this email.
+
+Thank you,
+Magic Chalk School`,
+		html: `<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937; }
+.card { max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; }
+.title { font-size: 18px; font-weight: 700; color: #16a34a; margin: 0 0 4px 0; }
+.muted { color: #6b7280; font-size: 14px; margin: 0; }
+.pill { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #ecfdf3; color: #15803d; font-size: 12px; font-weight: 600; margin: 10px 0; }
+.section { margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+	<p class="title">Absence notice</p>
+	<p class="muted">${formattedDate}</p>
+	<div class="section">
+		<p>Dear ${guardian},</p>
+		<p>${options.studentName} was marked absent today.</p>
+		${classLabel ? `<div class="pill">${classLabel}</div>` : ""}
+		<p><strong>Reason:</strong> ${reason}</p>
+		${teacher ? `<p>${teacher}</p>` : ""}
+		<p>If this is unexpected, please reply so we can update attendance.</p>
+		<p>Thank you,<br/>Magic Chalk School</p>
+	</div>
+</div>
+</body>
+</html>`,
+	};
+
+	try {
+		await transporter.sendMail(mailOptions);
+		console.log(`Absence email sent to ${to}`);
+	} catch (error) {
+		console.error("Error sending absence email:", error);
+		throw new Error("Failed to send absence email");
+	}
+}
+
+export async function sendAppointmentConfirmation(
+	to: string[],
+	details: {
+		parentName: string;
+		teacherName: string;
+		studentName: string;
+		date: Date | string;
+		time: string;
+		topic?: string;
+	}
+) {
+	const formattedDate = format(new Date(details.date), "EEEE, MMMM d, yyyy");
+	const subject = `Confirmed: Teacher Meeting - ${details.studentName}`;
+
+	const mailOptions = {
+		from: `"Magic Chalk" <${process.env.EMAIL_USER}>`,
+		to: to.join(", "),
+		subject,
+		html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #16a34a; padding: 24px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 24px;">Meeting Confirmed</h1>
+        </div>
+        <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+          <p>Hello,</p>
+          <p>This is to confirm your upcoming teacher-parent meeting at Magic Chalk School.</p>
+          
+          <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 24px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Student:</strong> ${details.studentName}</p>
+            <p style="margin: 0 0 10px 0;"><strong>Parent:</strong> ${details.parentName}</p>
+            <p style="margin: 0 0 10px 0;"><strong>Teacher:</strong> ${details.teacherName}</p>
+            <p style="margin: 0 0 10px 0;"><strong>Topic:</strong> ${details.topic || "General Discussion"}</p>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0;" />
+            <p style="margin: 0 0 5px 0; color: #16a34a; font-weight: bold;">Schedule:</p>
+            <p style="margin: 0; font-size: 18px;">${formattedDate} at ${details.time}</p>
+          </div>
+
+          <p>Please log in to your dashboard if you need to reschedule or view further details.</p>
+          <p style="margin-top: 30px;">Best regards,<br/>Magic Chalk School</p>
+        </div>
+      </div>
+    `,
+	};
+
+	try {
+		await transporter.sendMail(mailOptions);
+		console.log("Appointment confirmation emails sent");
+	} catch (error) {
+		console.error("Error sending appointment confirmation email:", error);
+	}
+}
+

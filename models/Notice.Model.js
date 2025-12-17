@@ -9,8 +9,9 @@ const NoticeSchema = new mongoose.Schema(
 		},
 		noticedate: {
 			type: String,
-			required: true,
+			required: false,
 			trim: true,
+			default: () => new Date().toISOString(),
 		},
 		notice: {
 			type: String,
@@ -19,6 +20,16 @@ const NoticeSchema = new mongoose.Schema(
 		},
 		noticeimage: {
 			type: String,
+		},
+		classGroup: {
+			type: String,
+			required: true,
+			trim: true,
+		},
+		createdBy: {
+			type: String,
+			required: true,
+			trim: true,
 		},
 	},
 	{

@@ -20,8 +20,13 @@ export async function GET(req) {
 		await connectDB();
 		let children = [];
 		if (payload.role === "parent") {
-			const records = await Student.find({ guardianEmail: payload.email }).select("firstName lastName classGroup").lean();
-			children = records.map((child) => ({ id: String(child._id), name: `${child.firstName} ${child.lastName}`.trim(), classGroup: child.classGroup || null }));
+			const records = await Student.find({ guardianEmail: payload.email }).select("firstName lastName classGroup guardianPhone").lean();
+			children = records.map((child) => ({
+				id: String(child._id),
+				name: `${child.firstName} ${child.lastName}`.trim(),
+				classGroup: child.classGroup || null,
+				phone: child.guardianPhone || null
+			}));
 		}
 
 		return NextResponse.json({

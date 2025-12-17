@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 import connectDB from "@/lib/mongodb";
 import Event from "@/models/Event.Model";
 import { uploadToCloudinary } from "@/utils/saveFileToCloudinaryUtils";
+
+const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
 export const config = {
 	api: {
@@ -12,6 +15,18 @@ export const config = {
 export async function POST(request) {
 	try {
 		await connectDB();
+
+		const token = request.cookies.get("authToken")?.value;
+		if (!token) {
+			return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+		}
+		const secretKey = new TextEncoder().encode(JWT_SECRET);
+		const { payload } = await jwtVerify(token, secretKey);
+		const role = payload?.role;
+		const creatorEmail = payload?.email || "";
+		if (!role || !["teacher", "admin"].includes(role)) {
+			return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+		}
 
 		const formData = await request.formData();
 		console.log("Received form data", formData);
@@ -31,6 +46,8 @@ export async function POST(request) {
 		const eventtime = formData.get("eventtime");
 		const eventspotifyUrl = formData.get("eventspotifyUrl");
 		const eventyoutubeUrl = formData.get("eventyoutubeUrl");
+		const classId = formData.get("classId");
+		const classLabel = formData.get("classLabel");
 		const eventposter = formData.get("eventposter");
 		if (!eventposter || typeof eventposter.arrayBuffer !== "function") {
 			return NextResponse.json({ success: false, error: "Invalid file upload for eventposter" }, { status: 400 });
@@ -44,9 +61,12 @@ export async function POST(request) {
 		if (!eventname || !eventcountry || !eventposter) {
 			return NextResponse.json({ success: false, error: "Required fields are missing" }, { status: 400 });
 		}
+		if (role === "teacher" && !classLabel && !classId) {
+			return NextResponse.json({ success: false, error: "Class is required for teacher-created events" }, { status: 400 });
+		}
 
 		// Format the date
-		const formattedDate = new Date(eventdate).toISOString().split("T")[0];
+		const formattedDate = eventdate ? new Date(eventdate).toISOString().split("T")[0] : "";
 
 		// Upload images to Cloudinary
 		const eventposterUrl = await uploadToCloudinary(eventposter, "magic_chalk_event_images");
@@ -69,6 +89,9 @@ export async function POST(request) {
 			backRowPrice,
 			preSalePrice,
 			doorSalePrice,
+			classId: classId || null,
+			classLabel: classLabel || "",
+			createdBy: creatorEmail,
 			eventtime,
 			eventspotifyUrl,
 			eventyoutubeUrl,

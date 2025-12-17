@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
@@ -287,9 +289,9 @@ export default function TeachersAdminPage() {
 										<td className="px-3 py-2 text-gray-700">
 											{Array.isArray(t.classIds) && t.classIds.length
 												? t.classIds
-														.map((c: any) => c?.name || "")
-														.filter(Boolean)
-														.join(", ")
+													.map((c: any) => c?.name || "")
+													.filter(Boolean)
+													.join(", ")
 												: "—"}
 										</td>
 										<td className="px-3 py-2 text-gray-700 capitalize">{t.status || "pending"}</td>

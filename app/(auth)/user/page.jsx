@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, memo, useEffect } from "react";
+import React, { useState, useCallback, memo, useEffect, Suspense } from "react";
 import { Eye, EyeOff, Lock, Mail, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,38 @@ const InputField = memo(({ id, icon: Icon, name, value, onChange, ...props }) =>
 
 InputField.displayName = "Input_Fields_User_Auth_Form";
 
-export default function AuthForm() {
+function AuthFormContent() {
+	const router = useRouter();
+	// Session state
+	const [checkingSession, setCheckingSession] = useState(true);
+	useEffect(() => {
+		let ignore = false;
+		const checkSession = async () => {
+			try {
+				const res = await fetch("/api/auth/me");
+				if (!res.ok) throw new Error("Not logged in");
+				const data = await res.json();
+				if (data?.user?.email && !ignore) {
+					// Redirect based on role
+					const role = data.user.role;
+					const target = role === "parent" ? "/parents/dashboard" : role === "teacher" ? "/teachers/dashboard" : "/dashboard";
+					if (typeof window !== "undefined") {
+						window.location.href = target;
+					} else {
+						router.replace(target);
+					}
+				}
+			} catch {
+				// Not logged in, show form
+			} finally {
+				if (!ignore) setCheckingSession(false);
+			}
+		};
+		checkSession();
+		return () => {
+			ignore = true;
+		};
+	}, [router]);
 	const searchParams = useSearchParams();
 	const initialEmail = searchParams.get("email") || "";
 	const initialToken = searchParams.get("token") || "";
@@ -35,7 +66,6 @@ export default function AuthForm() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
-	const router = useRouter();
 	const hasInvite = Boolean(inviteToken);
 
 	useEffect(() => {
@@ -150,6 +180,13 @@ export default function AuthForm() {
 		setShowPassword((prev) => !prev);
 	}, []);
 
+	if (checkingSession) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+				<span className="text-gray-500">Checking session...</span>
+			</div>
+		);
+	}
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
 			<Card className="w-full max-w-md mx-auto">
@@ -227,5 +264,13 @@ export default function AuthForm() {
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+export default function AuthForm() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<AuthFormContent />
+		</Suspense>
 	);
 }

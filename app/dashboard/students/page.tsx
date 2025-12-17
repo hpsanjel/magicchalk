@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type CsvRow = string[];
 type ParsedCsv = { headers: string[]; rows: CsvRow[] };
@@ -157,7 +159,7 @@ function formatDateForInput(value?: string) {
 	return d.toISOString().slice(0, 10);
 }
 
-export default function StudentsAdminPage() {
+function StudentsAdminPageContent() {
 	const searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -601,5 +603,13 @@ export default function StudentsAdminPage() {
 				)}
 			</main>
 		</div>
+	);
+}
+
+export default function StudentsAdminPage() {
+	return (
+		<Suspense fallback={<div className="p-6">Loading...</div>}>
+			<StudentsAdminPageContent />
+		</Suspense>
 	);
 }

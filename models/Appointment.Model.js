@@ -40,9 +40,38 @@ const appointmentSchema = new mongoose.Schema({
 		trim: true,
 	},
 
+	// Type of appointment
+	type: {
+		type: String,
+		enum: ["school-tour", "teacher-meeting"],
+		default: "school-tour",
+	},
+
+	// Teacher meeting specific fields (Optional)
+	teacherId: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Teacher",
+	},
+	studentId: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Student",
+	},
+	parentId: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
+	topic: {
+		type: String,
+		trim: true,
+	},
+	reason: {
+		type: String,
+		trim: true,
+	},
+
 	status: {
 		type: String,
-		enum: ["scheduled", "completed", "cancelled", "no-show"],
+		enum: ["scheduled", "completed", "cancelled", "no-show", "pending", "confirmed", "rejected", "proposed"],
 		default: "scheduled",
 	},
 

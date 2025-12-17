@@ -8,12 +8,34 @@ export async function submitMessage(formData: FormData) {
 	try {
 		await connectDB();
 
+		const now = new Date();
+		const parentFirstName = String(formData.get("firstName"));
+		const parentLastName = String(formData.get("lastName"));
+		const parentEmail = String(formData.get("email"));
+		const parentPhone = String(formData.get("phone"));
+		const parentMessage = String(formData.get("message"));
+
 		const message = new Message({
-			firstName: String(formData.get("firstName")),
-			lastName: String(formData.get("lastName")),
-			email: String(formData.get("email")),
-			phone: String(formData.get("phone")),
-			message: String(formData.get("message")),
+			firstName: parentFirstName,
+			lastName: parentLastName,
+			email: parentEmail,
+			phone: parentPhone,
+			message: parentMessage,
+			relation: "Parent/Guardian",
+			topic: "General question",
+			priority: "normal",
+			status: "open",
+			messages: [
+				{
+					senderType: "parent",
+					senderName: `${parentFirstName} ${parentLastName}`.trim() || "Parent",
+					body: parentMessage,
+					via: "contact-form",
+					createdAt: now,
+				},
+			],
+			lastMessageAt: now,
+			unreadForTeacher: true,
 		});
 
 		console.log("Received data:", {

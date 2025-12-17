@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
@@ -83,7 +85,7 @@ export default function StudentsListPage() {
 			const wb = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(wb, sheet, "Students");
 			XLSX.writeFile(wb, "students.xlsx");
-		} catch (error) {
+		} catch {
 			toast({ title: "Export failed", description: "Could not generate Excel." });
 		}
 	};
@@ -111,18 +113,18 @@ export default function StudentsListPage() {
 				<table>
 					<thead>
 						<tr>${Object.keys(exportRows[0] || {})
-							.map((h) => `<th>${h}</th>`)
-							.join("")}</tr>
+				.map((h) => `<th>${h}</th>`)
+				.join("")}</tr>
 					</thead>
 					<tbody>
 						${exportRows
-							.map(
-								(row) =>
-									`<tr>${Object.keys(row)
-										.map((h) => `<td>${row[h] || ""}</td>`)
-										.join("")}</tr>`
-							)
-							.join("")}
+				.map(
+					(row) =>
+						`<tr>${Object.keys(row)
+							.map((h) => `<td>${row[h] || ""}</td>`)
+							.join("")}</tr>`
+				)
+				.join("")}
 					</tbody>
 				</table>
 			</body>

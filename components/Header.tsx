@@ -258,7 +258,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 											<ul className="max-h-40 overflow-y-auto">
 												{user.children.map((child) => (
 													<li key={child.id} className="px-4 py-2 text-sm text-gray-800 flex justify-between hover:bg-gray-50">
-														<Link href={`/parents/dashboard/students/${child.id}`} className="font-medium" onClick={() => setShowUserDropdown(false)}>
+														<Link href={`/parents/dashboard?studentId=${child.id}`} className="font-medium" onClick={() => setShowUserDropdown(false)}>
 															{child.name}
 														</Link>
 														<span className="text-xs text-gray-500">{child.classGroup || ""}</span>

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type React from "react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -13,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar as CalendarIcon, Clock, Mail, Phone, User, Baby, School, MessageSquare, AlertCircle, Trash2, CheckCircle, Search, Download, FileText, Printer, Info, X } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Mail, Phone, User, Baby, School, MessageSquare, AlertCircle, Trash2, CheckCircle, Search, Info, X } from "lucide-react";
 import { addAvailableDate } from "@/lib/actions-mongoose";
 
 interface AdminDashboardProps {
@@ -47,7 +49,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	const [selectedDateOption, setSelectedDateOption] = useState<"preferred" | "alternate">("preferred");
 
 	// Filter states
-	const [filterPeriod, setFilterPeriod] = useState<"all" | "week" | "month" | "year" | "custom">("all");
+	const [filterPeriod] = useState<"all" | "week" | "month" | "year" | "custom">("all");
 	const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
 	const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -138,82 +140,79 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 	}, [refreshAvailabilityData]);
 
 	// Export to PDF
-	const exportToPDF = () => {
-		const printWindow = window.open("", "_blank");
-		if (!printWindow) return;
+	// const exportToPDF = () => {
+	// 	const printWindow = window.open("", "_blank");
+	// 	if (!printWindow) return;
 
-		const html = `
-			<!DOCTYPE html>
-			<html>
-			<head>
-				<title>Tour Bookings Report - ${format(new Date(), "MMMM d, yyyy")}</title>
-				<style>
-					body { font-family: Arial, sans-serif; margin: 20px; }
-					h1 { color: #16a34a; text-align: center; margin-bottom: 10px; }
-					.subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-					table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-					th { background-color: #16a34a; color: white; padding: 12px; text-align: left; font-weight: bold; }
-					td { padding: 10px; border-bottom: 1px solid #ddd; }
-					tr:hover { background-color: #f5f5f5; }
-					.status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-					.status-pending { background-color: #fef3c7; color: #92400e; }
-					.status-confirmed { background-color: #d1fae5; color: #065f46; }
-					.status-completed { background-color: #dbeafe; color: #1e40af; }
-					.status-cancelled { background-color: #fee2e2; color: #991b1b; }
-					@media print {
-						body { margin: 0; }
-						button { display: none; }
-					}
-				</style>
-			</head>
-			<body>
-				<h1>Magic Chalk School - Tour Bookings Report</h1>
-				<div class="subtitle">Generated on ${format(new Date(), "MMMM d, yyyy 'at' h:mm a")}</div>
-				<div class="subtitle">Total Bookings: ${filteredAppointments.length}</div>
-				<table>
-					<thead>
-						<tr>
-							<th>Parent Name</th>
-							<th>Child Name</th>
-							<th>Contact</th>
-							<th>Tour Date</th>
-							<th>Tour Time</th>
-							<th>Status</th>
-						</tr>
-					</thead>
-					<tbody>
-						${filteredAppointments
-							.map(
-								// eslint-disable-next-line @typescript-eslint/no-explicit-any
-								(booking: any) => `
-							<tr>
-								<td>${booking.parentFirstName} ${booking.parentLastName}</td>
-								<td>${booking.childFirstName} ${booking.childLastName}</td>
-								<td>${booking.email}<br/>${booking.phone}</td>
-								<td>${booking.confirmedDate ? formatAppointmentDate(booking.confirmedDate) + " ✓" : formatAppointmentDate(booking.preferredDate)}</td>
-								<td>${booking.confirmedTime || booking.preferredTime}</td>
-								<td><span class="status status-${booking.status}">${booking.status}</span></td>
-							</tr>
-						`
-							)
-							.join("")}
-					</tbody>
-				</table>
-			</body>
-			</html>
-		`;
+	// 	const html = `
+	// 		<!DOCTYPE html>
+	// 		<html>
+	// 		<head>
+	// 			<title>Tour Bookings Report - ${format(new Date(), "MMMM d, yyyy")}</title>
+	// 			<style>
+	// 				body { font-family: Arial, sans-serif; margin: 20px; }
+	// 				h1 { color: #16a34a; text-align: center; margin-bottom: 10px; }
+	// 				.subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+	// 				table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+	// 				th { background-color: #16a34a; color: white; padding: 12px; text-align: left; font-weight: bold; }
+	// 				td { padding: 10px; border-bottom: 1px solid #ddd; }
+	// 				tr:hover { background-color: #f5f5f5; }
+	// 				.status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+	// 				.status-pending { background-color: #fef3c7; color: #92400e; }
+	// 				.status-confirmed { background-color: #d1fae5; color: #065f46; }
+	// 				.status-completed { background-color: #dbeafe; color: #1e40af; }
+	// 				.status-cancelled { background-color: #fee2e2; color: #991b1b; }
+	// 				@media print {
+	// 					body { margin: 0; }
+	// 					button { display: none; }
+	// 				}
+	// 			</style>
+	// 		</head>
+	// 		<body>
+	// 			<h1>Magic Chalk School - Tour Bookings Report</h1>
+	// 			<div class="subtitle">Generated on ${format(new Date(), "MMMM d, yyyy 'at' h:mm a")}</div>
+	// 			<div class="subtitle">Total Bookings: ${filteredAppointments.length}</div>
+	// 			<table>
+	// 				<thead>
+	// 					<tr>
+	// 						<th>Parent Name</th>
+	// 						<th>Child Name</th>
+	// 						<th>Contact</th>
+	// 						<th>Tour Date</th>
+	// 						<th>Tour Time</th>
+	// 						<th>Status</th>
+	// 					</tr>
+	// 				</thead>
+	// 				<tbody>
+	// 					${filteredAppointments
+	// 			.map(
+	// 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// 				(booking: any) => `
+	// 						<tr>
+	// 							<td>${booking.parentFirstName} ${booking.parentLastName}</td>
+	// 							<td>${booking.childFirstName} ${booking.childLastName}</td>
+	// 							<td>${booking.email}<br/>${booking.phone}</td>
+	// 							<td>${booking.confirmedDate ? formatAppointmentDate(booking.confirmedDate) + " ✓" : formatAppointmentDate(booking.preferredDate)}</td>
+	// 							<td>${booking.confirmedTime || booking.preferredTime}</td>
+	// 							<td><span class="status status-${booking.status}">${booking.status}</span></td>
+	// 						</tr>
+	// 					`
+	// 			)
+	// 			.join("")}
+	// 				</tbody>
+	// 			</table>
+	// 		</body>
+	// 		</html>
+	// 	`;
 
-		printWindow.document.write(html);
-		printWindow.document.close();
-		setTimeout(() => {
-			printWindow.print();
-		}, 250);
-	};
+	// 	printWindow.document.write(html);
+	// 	printWindow.document.close();
+	// 	setTimeout(() => {
+	// 		printWindow.print();
+	// 	}, 250);
+	// };
 
-	// Print function
-	const handlePrint = () => {
-		exportToPDF();
-	};
+
 
 	// Load existing time slots when date is selected
 	const loadExistingTimeSlots = async (selectedDate: Date) => {
@@ -432,14 +431,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 		return slots.filter((time: string) => time !== originalTime);
 	};
 
-	const isFutureOrToday = (value: Date | string) => {
-		const d = new Date(value);
-		if (Number.isNaN(d.getTime())) return false;
-		const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-		const today = new Date();
-		const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-		return dayStart >= todayStart;
-	};
+
 
 	const isEligibleRescheduleDate = (value: Date | string) => {
 		const d = new Date(value);
@@ -1357,8 +1349,8 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 							<li>
 								Times must be between <strong>07:00 AM</strong> and <strong>07:00 PM</strong>.
 							</li>
-							<li>Click "Add Slot" to add each time, or remove with the × button.</li>
-							<li>Click "Save" to make these times available for booking.</li>
+							<li>Click &quot;Add Slot&quot; to add each time, or remove with the × button.</li>
+							<li>Click &quot;Save&quot; to make these times available for booking.</li>
 						</ol>
 						<div className="mt-2 p-3 bg-blue-50 rounded-lg">
 							<p className="font-semibold text-blue-800 mb-2">Examples of valid times:</p>

@@ -1,21 +1,28 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import React, { useMemo, useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CalendarDays, Bell, MessageSquare, CreditCard, Bus, Images, Home, Info, UserCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+	ChevronRight,
+	MessageSquare,
+	X,
+	Image as ImageIcon,
+	Info,
+	CalendarDays,
+	Bell, ChevronLeft, UserCheck
+} from "lucide-react";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import AppointmentModal from "./appointment-modal";
 
 const stats = [
 	{ label: "Notices", value: 4, hint: "Unread" },
-	{ label: "Meetings", value: 2, hint: "This week" },
-	{ label: "Invoices", value: 1, hint: "Due soon" },
-	{ label: "Routes", value: 3, hint: "Active" },
-];
+	{ label: "Meetings", value: 2, hint: "Upcoming" },
 
-const notices = [
-	{ id: 1, title: "Winter break schedule", date: "Dec 18, 2025", type: "Academic" },
-	{ id: 2, title: "Immunization reminder", date: "Dec 22, 2025", type: "Health" },
-	{ id: 3, title: "Science fair signup", date: "Jan 10, 2026", type: "Event" },
 ];
 
 const meetings = [
@@ -23,23 +30,19 @@ const meetings = [
 	{ id: 2, title: "Counselor check-in", date: "Jan 04, 2026", time: "2:00 PM", status: "Pending" },
 ];
 
-const invoices = [
-	{ id: 1, label: "Tuition - January", amount: "Rs 12,000", due: "Jan 05, 2026", status: "Due", reference: "INV-2026-001" },
-	{ id: 2, label: "Cafeteria - December", amount: "Rs 3,200", due: "Dec 28, 2025", status: "Paid", reference: "INV-2025-234" },
-	{ id: 3, label: "Activity Fee - Term 2", amount: "Rs 1,800", due: "Jan 15, 2026", status: "Pending", reference: "INV-2026-019" },
-];
 
-const galleries = [
-	{ id: 1, label: "Winter concert", count: 24 },
-	{ id: 2, label: "Classroom moments", count: 18 },
-];
 
-const routes = [
-	{ id: 1, name: "Route A", stop: "Maple St.", time: "7:45 AM" },
-	{ id: 2, name: "Route B", stop: "Pine Ave.", time: "8:05 AM" },
-	{ id: 3, name: "Route C", stop: "Oak Blvd.", time: "8:20 AM" },
-];
 
+
+type Assignment = {
+	_id: string;
+	title: string;
+	description?: string;
+	dueDate?: string;
+	classGroup?: string;
+	status?: string;
+	[key: string]: any;
+};
 type MealKey = "breakfast" | "lunch" | "snack";
 type MealItem = { title: string; detail: string };
 type MealPlanDay = { day: string } & Record<MealKey, MealItem>;
@@ -81,12 +84,6 @@ const mealPlan: MealPlanDay[] = [
 		lunch: { title: "Veggie fried rice", detail: "Peas, carrots, egg; low sodium." },
 		snack: { title: "Banana bread slice", detail: "Whole grain, low sugar." },
 	},
-	{
-		day: "Saturday",
-		breakfast: { title: "Waffles with strawberries", detail: "Light syrup, yogurt on the side." },
-		lunch: { title: "Chicken noodle soup", detail: "Served with whole grain roll." },
-		snack: { title: "Apple chips & cheese", detail: "Baked chips, mild cheddar." },
-	},
 ];
 
 const GALLERY_PAGE_SIZE = 8;
@@ -103,14 +100,10 @@ function toEventDateParts(date?: string): { month: string; day: string } {
 	return { month: date, day: "" };
 }
 
-function isUpcomingOrToday(date?: string): boolean {
-	if (!date) return false;
-	const parsed = new Date(date);
-	if (Number.isNaN(parsed.getTime())) return false;
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	parsed.setHours(0, 0, 0, 0);
-	return parsed >= today;
+function formatDateTime(value?: string | Date) {
+	if (!value) return "";
+	const d = new Date(value);
+	return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
 }
 
 type GalleryItem = {
@@ -123,46 +116,169 @@ type GalleryItem = {
 };
 
 const sections = [
+	// Assignment type for TS
+
 	{ key: "dashboard", label: "Dashboard" },
 	{ key: "children", label: "Child Info" },
 	{ key: "notices", label: "Notices" },
-	{ key: "appointments", label: "Book Appointment" },
+	{ key: "messages", label: "Messages" },
 	{ key: "assignments", label: "Assignments" },
-	{ key: "reports", label: "Student Report" },
 	{ key: "meals", label: "School Meals" },
 	{ key: "events", label: "Events" },
 	{ key: "gallery", label: "Gallery" },
-	{ key: "invoices", label: "Invoices" },
+	{ key: "meetings", label: "Meetings" },
 ];
 
-export default function ParentsDashboardPage() {
+function ParentsDashboardPageContent() {
 	const [active, setActive] = useState<string>("dashboard");
 	const activeLabel = useMemo(() => sections.find((s) => s.key === active)?.label || "Dashboard", [active]);
-	const [children, setChildren] = useState<{ id: string; name: string; classGroup?: string | null }[]>([]);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const [children, setChildren] = useState<any[]>([]);
+	const [assignments, setAssignments] = useState<Assignment[]>([]);
+	const [loadingAssignments, setLoadingAssignments] = useState(false);
+	const [assignmentsError, setAssignmentsError] = useState("");
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const studentIdParam = searchParams.get("studentId");
+
+	const redirectToLogin = useCallback(
+		(setter?: (msg: string) => void) => {
+			setter?.("Session expired. Redirecting to login...");
+			if (typeof window !== "undefined") {
+				window.location.href = "/user";
+			} else {
+				router.replace("/user");
+			}
+		},
+		[router]
+	);
+	// Fetch assignments when assignments tab is active
+	useEffect(() => {
+		if (active !== "assignments") return;
+		let ignore = false;
+		const loadAssignments = async () => {
+			setLoadingAssignments(true);
+			setAssignmentsError("");
+			try {
+				const res = await fetch("/api/assignments");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin(setAssignmentsError);
+					return;
+				}
+				const data = await res.json();
+				if (!res.ok || !data?.success || !Array.isArray(data.assignments)) {
+					throw new Error(data?.error || "Unable to load assignments");
+				}
+				if (!ignore) {
+					setAssignments(data.assignments);
+				}
+			} catch (error) {
+				const message = error instanceof Error ? error.message : "Failed to load assignments";
+				if (!ignore) setAssignmentsError(message);
+			} finally {
+				if (!ignore) setLoadingAssignments(false);
+			}
+		};
+		loadAssignments();
+		return () => {
+			ignore = true;
+		};
+	}, [active, redirectToLogin]);
+
 	const [loadingChildren, setLoadingChildren] = useState(false);
 	const [childrenError, setChildrenError] = useState("");
-	const [noticesData, setNoticesData] = useState<{ id: string; title: string; date: string; body: string }[]>([]);
+	const [noticesData, setNoticesData] = useState<{ id: string; title: string; date: string; body: string; classGroup?: string }[]>([]);
+	const [noticeSearch, setNoticeSearch] = useState("");
+	const [expandedNotice, setExpandedNotice] = useState<string | null>(null);
 	const [loadingNotices, setLoadingNotices] = useState(false);
 	const [noticesError, setNoticesError] = useState("");
-	const [eventsData, setEventsData] = useState<{ id: string; title: string; date?: string; venue?: string; description?: string }[]>([]);
+	const [eventsData, setEventsData] = useState<{ id: string; title: string; date?: string; venue?: string; description?: string; classLabel?: string }[]>([]);
 	const [loadingEvents, setLoadingEvents] = useState(false);
 	const [eventsError, setEventsError] = useState("");
 	const [galleryMedia, setGalleryMedia] = useState<GalleryItem[]>([]);
-	const [galleryCategories, setGalleryCategories] = useState<string[]>([]);
+	// const [galleryCategories, setGalleryCategories] = useState<string[]>([]);
 	const [activeGalleryFilter, setActiveGalleryFilter] = useState<string>("All");
 	const [galleryPage, setGalleryPage] = useState(1);
 	const [loadingGallery, setLoadingGallery] = useState(false);
 	const [galleryError, setGalleryError] = useState("");
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 	const [lightboxIndex, setLightboxIndex] = useState(0);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const [messages, setMessages] = useState<any[]>([]);
+	const [messagesLoading, setMessagesLoading] = useState(false);
+	const [messagesError, setMessagesError] = useState("");
+	const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+	const [replyBody, setReplyBody] = useState("");
+	const [creatingMessage, setCreatingMessage] = useState(false);
+	const [newMessageForm, setNewMessageForm] = useState({ studentId: "", priority: "normal", topic: "", message: "" });
 
-	const fetchChildren = () => {
+	// Appointments
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const [appointments, setAppointments] = useState<any[]>([]);
+	const [loadingAppointments, setLoadingAppointments] = useState(false);
+	const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+	const [appointmentAction, setAppointmentAction] = useState<{ type: 'accept' | 'reject' | 'complete' | null, id: string | null }>({ type: null, id: null });
+	const [appointmentForm, setAppointmentForm] = useState({ reason: "" });
+	const [submittingAppointment, setSubmittingAppointment] = useState(false);
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const normalizeMessageThread = useCallback((msg: any) => {
+		const parentName = `${msg.firstName || ""} ${msg.lastName || ""} `.trim() || "Parent";
+		const baseThread = Array.isArray(msg.messages) ? [...msg.messages] : [];
+		if (!baseThread.length && msg.message) {
+			baseThread.push({ senderType: "parent", senderName: parentName, body: msg.message, via: "contact-form", createdAt: msg.createdAt || new Date().toISOString() });
+		}
+		const lastMessageAt = msg.lastMessageAt || (baseThread.length ? baseThread[baseThread.length - 1]?.createdAt : msg.createdAt) || new Date().toISOString();
+		return { ...msg, messages: baseThread, lastMessageAt };
+	}, []);
+
+	const fetchMessages = useCallback(() => {
+		let ignore = false;
+		const load = async () => {
+			setMessagesLoading(true);
+			setMessagesError("");
+			try {
+				const res = await fetch("/api/messages");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin(setMessagesError);
+					return;
+				}
+				const data = await res.json();
+				if (!res.ok || !data?.success || !Array.isArray(data.messages)) {
+					throw new Error(data?.error || "Unable to load messages");
+				}
+				if (!ignore) {
+					const normalized = data.messages.map((m: any) => normalizeMessageThread(m)).sort((a: any, b: any) => new Date(b.lastMessageAt || b.createdAt || 0).getTime() - new Date(a.lastMessageAt || a.createdAt || 0).getTime());
+					setMessages(normalized);
+					setSelectedMessageId((prev) => {
+						if (prev && normalized.some((m: any) => (m._id || m.id) === prev)) return prev;
+						return normalized.length ? normalized[0]._id || normalized[0].id || null : null;
+					});
+				}
+			} catch (error) {
+				const message = error instanceof Error ? error.message : "Failed to load messages";
+				if (!ignore) setMessagesError(message);
+			} finally {
+				if (!ignore) setMessagesLoading(false);
+			}
+		};
+		load();
+		return () => {
+			ignore = true;
+		};
+	}, [normalizeMessageThread, redirectToLogin]);
+
+	const fetchChildren = useCallback(() => {
 		let ignore = false;
 		const load = async () => {
 			setLoadingChildren(true);
 			setChildrenError("");
 			try {
 				const res = await fetch("/api/auth/me");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin(setChildrenError);
+					return;
+				}
 				const data = await res.json();
 				if (!res.ok || !data?.user) {
 					throw new Error(data?.error || "Unable to load children");
@@ -183,21 +299,25 @@ export default function ParentsDashboardPage() {
 		return () => {
 			ignore = true;
 		};
-	};
+	}, [redirectToLogin]);
 
 	useEffect(() => {
 		if (active !== "children") return;
 		return fetchChildren();
 	}, [active]);
 
+	// Always load notices on initial mount (not just when Notices tab is active)
 	useEffect(() => {
-		if (active !== "notices") return;
 		let ignore = false;
 		const loadNotices = async () => {
 			setLoadingNotices(true);
 			setNoticesError("");
 			try {
 				const res = await fetch("/api/notices");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin(setNoticesError);
+					return;
+				}
 				const data = await res.json();
 				if (!res.ok || !data?.success || !Array.isArray(data.notices)) {
 					throw new Error(data?.error || "Unable to load notices");
@@ -208,6 +328,7 @@ export default function ParentsDashboardPage() {
 						title: n.noticetitle,
 						date: n.noticedate,
 						body: n.notice,
+						classGroup: n.classGroup,
 					}));
 					setNoticesData(normalized);
 				}
@@ -222,10 +343,10 @@ export default function ParentsDashboardPage() {
 		return () => {
 			ignore = true;
 		};
-	}, [active]);
+	}, []);
 
 	useEffect(() => {
-		if (active !== "gallery") return;
+		if (active !== "gallery" && active !== "dashboard") return;
 		if (children.length === 0 && !loadingChildren) {
 			fetchChildren();
 		}
@@ -235,6 +356,10 @@ export default function ParentsDashboardPage() {
 			setGalleryError("");
 			try {
 				const res = await fetch("/api/gallery");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin(setGalleryError);
+					return;
+				}
 				const data = await res.json();
 				if (!res.ok || !data?.success || !Array.isArray(data.gallery)) {
 					throw new Error(data?.error || "Unable to load gallery");
@@ -248,7 +373,7 @@ export default function ParentsDashboardPage() {
 								const url = typeof raw === "string" ? raw.trim() : "";
 								if (!url) return null;
 								return {
-									id: `${item._id}-${idx}`,
+									id: `${item._id} -${idx} `,
 									url,
 									alt: (typeof entry === "object" ? entry?.alt : undefined) || item.alt || item.category || "Classroom photo",
 									category: item.category || "Uncategorized",
@@ -259,7 +384,6 @@ export default function ParentsDashboardPage() {
 							.filter(Boolean);
 					});
 					setGalleryMedia(expanded);
-					setGalleryCategories(Array.isArray(data.categories) ? data.categories : []);
 					setGalleryPage(1);
 					setActiveGalleryFilter("All");
 				}
@@ -276,26 +400,66 @@ export default function ParentsDashboardPage() {
 		};
 	}, [active]);
 
+	const selectedStudent = useMemo(() => {
+		if (!studentIdParam) return null;
+		return children.find((c) => String((c as any).id || (c as any)._id) === studentIdParam) || null;
+	}, [children, studentIdParam]);
+
 	const allowedClassLabels = useMemo(() => {
+		if (selectedStudent) {
+			return new Set([selectedStudent.classGroup ? selectedStudent.classGroup.toString().trim().toLowerCase() : ""]);
+		}
 		const labels = children.map((child) => (child.classGroup ? child.classGroup.toString().trim().toLowerCase() : "")).filter(Boolean);
 		return new Set(labels);
-	}, [children]);
+	}, [children, selectedStudent]);
+
+	useEffect(() => {
+		if (active !== "messages") return;
+		if (children.length === 0 && !loadingChildren) {
+			fetchChildren();
+		}
+		return fetchMessages();
+	}, [active, children.length, loadingChildren, fetchChildren, fetchMessages]);
+
+	useEffect(() => {
+		if (!messages.length) {
+			setSelectedMessageId(null);
+			return;
+		}
+		const exists = messages.some((m) => (m._id || m.id) === selectedMessageId);
+		if (!exists) {
+			setSelectedMessageId(messages[0]._id || messages[0].id || null);
+		}
+	}, [messages, selectedMessageId]);
+
+	useEffect(() => {
+		if (newMessageForm.studentId || children.length === 0) return;
+		setNewMessageForm((prev) => ({ ...prev, studentId: String((children[0] as any).id || (children[0] as any)._id || "") }));
+	}, [children, newMessageForm.studentId]);
+
+	const selectedMessage = useMemo(() => messages.find((m) => (m._id || m.id) === selectedMessageId) || null, [messages, selectedMessageId]);
 
 	useEffect(() => {
 		if (active !== "events") return;
+		if (children.length === 0 && !loadingChildren) {
+			fetchChildren();
+		}
 		let ignore = false;
 		const loadEvents = async () => {
 			setLoadingEvents(true);
 			setEventsError("");
 			try {
 				const res = await fetch("/api/events");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin(setEventsError);
+					return;
+				}
 				const data = await res.json();
 				if (!res.ok || !data?.success || !Array.isArray(data.events)) {
 					throw new Error(data?.error || "Unable to load events");
 				}
 				if (!ignore) {
 					const normalized = data.events
-						.filter((evt: any) => isUpcomingOrToday(evt.eventdate))
 						.sort((a: any, b: any) => new Date(a.eventdate).getTime() - new Date(b.eventdate).getTime())
 						.map((evt: any) => ({
 							id: evt._id,
@@ -303,6 +467,7 @@ export default function ParentsDashboardPage() {
 							date: evt.eventdate,
 							venue: evt.eventvenue,
 							description: evt.eventdescription,
+							classLabel: evt.classLabel || evt.classId?.name || "",
 						}));
 					setEventsData(normalized);
 				}
@@ -317,7 +482,71 @@ export default function ParentsDashboardPage() {
 		return () => {
 			ignore = true;
 		};
-	}, [active]);
+	}, [active, allowedClassLabels, redirectToLogin, fetchChildren, loadingChildren]);
+
+	const fetchAppointments = useCallback(() => {
+		let ignore = false;
+		const loadAppointments = async () => {
+			setLoadingAppointments(true);
+			try {
+				const res = await fetch("/api/appointments");
+				if (res.status === 401) {
+					if (!ignore) redirectToLogin();
+					return;
+				}
+				const data = await res.json();
+				if (!res.ok || !data?.success || !Array.isArray(data.appointments)) {
+					throw new Error(data?.error || "Unable to load appointments");
+				}
+				if (!ignore) {
+					setAppointments(data.appointments);
+				}
+			} catch (error) {
+				console.error("Failed to load appointments:", error);
+			} finally {
+				if (!ignore) setLoadingAppointments(false);
+			}
+		};
+		loadAppointments();
+		return () => {
+			ignore = true;
+		};
+	}, [redirectToLogin]);
+
+	const handleUpdateAppointment = async (id: string, status: string, additionalData: any = {}) => {
+		setSubmittingAppointment(true);
+		try {
+			const res = await fetch(`/api/appointments/${id}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ status, ...additionalData }),
+			});
+			if (res.status === 401) {
+				redirectToLogin();
+				return;
+			}
+			const data = await res.json();
+			if (!res.ok || !data?.success) {
+				throw new Error(data?.error || "Failed to update appointment");
+			}
+			setAppointments((prev) => prev.map((a) => (a._id === id || a.id === id ? data.appointment : a)));
+			setAppointmentAction({ type: null, id: null });
+			setAppointmentForm({ reason: "" });
+		} catch (error) {
+			console.error("Error updating appointment:", error);
+			alert(error instanceof Error ? error.message : "Failed to update appointment");
+		} finally {
+			setSubmittingAppointment(false);
+		}
+	};
+
+	useEffect(() => {
+		if (active !== "meetings") return;
+		if (children.length === 0 && !loadingChildren) {
+			fetchChildren();
+		}
+		return fetchAppointments();
+	}, [active, children.length, loadingChildren, fetchChildren, fetchAppointments]);
 
 	const openLightbox = (index: number) => {
 		if (lightboxItems.length === 0) return;
@@ -340,6 +569,71 @@ export default function ParentsDashboardPage() {
 			if (lightboxItems.length === 0) return 0;
 			return (prev + 1) % lightboxItems.length;
 		});
+	};
+
+	const handleSendReply = async () => {
+		if (!selectedMessageId || !replyBody.trim()) return;
+		setMessagesError("");
+		try {
+			const res = await fetch(`/ api / messages / ${selectedMessageId} `, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: replyBody }),
+			});
+			if (res.status === 401) {
+				redirectToLogin(setMessagesError);
+				return;
+			}
+			const data = await res.json();
+			if (!res.ok || !data?.success || !data?.message) {
+				throw new Error(data?.error || "Failed to send reply");
+			}
+			const updated = normalizeMessageThread(data.message);
+			setMessages((prev) => prev.map((m) => ((m._id || m.id) === (updated._id || updated.id) ? updated : m)));
+			setReplyBody("");
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "Failed to send reply";
+			setMessagesError(message);
+		}
+	};
+
+	const handleCreateMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		if (!newMessageForm.studentId || !newMessageForm.message.trim()) {
+			setMessagesError("Please pick a child and write a message.");
+			return;
+		}
+		setCreatingMessage(true);
+		setMessagesError("");
+		try {
+			const res = await fetch("/api/messages", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					studentId: newMessageForm.studentId,
+					topic: newMessageForm.topic,
+					priority: newMessageForm.priority,
+					message: newMessageForm.message,
+				}),
+			});
+			if (res.status === 401) {
+				redirectToLogin(setMessagesError);
+				return;
+			}
+			const data = await res.json();
+			if (!res.ok || !data?.success || !data?.message) {
+				throw new Error(data?.error || "Failed to send message");
+			}
+			const normalized = normalizeMessageThread(data.message);
+			setMessages((prev) => [normalized, ...prev]);
+			setSelectedMessageId(normalized._id || normalized.id || null);
+			setNewMessageForm((prev) => ({ studentId: prev.studentId, topic: "", priority: "normal", message: "" }));
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "Failed to send message";
+			setMessagesError(message);
+		} finally {
+			setCreatingMessage(false);
+		}
 	};
 
 	useEffect(() => {
@@ -378,11 +672,30 @@ export default function ParentsDashboardPage() {
 			setGalleryPage(1);
 		}
 	}, [galleryFilters, activeGalleryFilter]);
+
 	const filteredGallery = activeGalleryFilter === "All" ? classScopedGallery : classScopedGallery.filter((item) => item.category === activeGalleryFilter);
 	const totalGalleryPages = Math.max(1, Math.ceil(filteredGallery.length / GALLERY_PAGE_SIZE));
 	const currentGalleryPage = Math.min(galleryPage, totalGalleryPages);
 	const paginatedGallery = filteredGallery.slice((currentGalleryPage - 1) * GALLERY_PAGE_SIZE, currentGalleryPage * GALLERY_PAGE_SIZE);
+
 	const lightboxItems = filteredGallery.length > 0 ? filteredGallery : galleryMedia;
+
+	const galleryStats = useMemo(() => {
+		const statsMap = new Map<string, number>();
+		classScopedGallery.forEach((item) => {
+			const cat = item.category || "Uncategorized";
+			statsMap.set(cat, (statsMap.get(cat) || 0) + 1);
+		});
+		return Array.from(statsMap.entries()).map(([label, count], idx) => ({ id: idx, label, count }));
+	}, [classScopedGallery]);
+
+	const filteredAppointments = useMemo(() => {
+		if (!selectedStudent) return appointments;
+		return appointments.filter(apt =>
+			!apt.studentId ||
+			String(apt.studentId._id || apt.studentId) === String(selectedStudent.id || selectedStudent._id)
+		);
+	}, [appointments, selectedStudent]);
 
 	return (
 		<div className="min-h-screen bg-gray-50 pt-28">
@@ -391,12 +704,25 @@ export default function ParentsDashboardPage() {
 					<div>
 						<p className="text-sm text-gray-500">Welcome back</p>
 						<h1 className="text-2xl font-semibold text-gray-900">{activeLabel}</h1>
-						<p className="text-sm text-gray-500">Stay on top of notices, meetings, invoices, and transport.</p>
+						<p className="text-sm text-gray-500">Stay on top of notices, meetings, and transport.</p>
+						{selectedStudent && (
+							<div className="mt-2 flex items-center gap-2">
+								<span className="text-sm font-medium text-green-800 bg-green-100 px-3 py-1 rounded-full">
+									Showing for: {selectedStudent.name}
+								</span>
+								<Link href="/parents/dashboard" className="text-xs text-gray-500 hover:text-gray-700 underline">
+									Clear filter
+								</Link>
+							</div>
+						)}
 					</div>
 					<div className="flex flex-wrap gap-2">
-						<button className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-white text-sm font-medium hover:bg-green-700 transition">
+						<button
+							onClick={() => setShowAppointmentModal(true)}
+							className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-white text-sm font-medium hover:bg-green-700 transition"
+						>
 							<CalendarDays className="h-4 w-4" />
-							Book Meeting
+							Book Appointment
 						</button>
 						<button className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 transition">
 							<Bell className="h-4 w-4" />
@@ -412,7 +738,7 @@ export default function ParentsDashboardPage() {
 						{sections.map((item) => {
 							const isActive = item.key === active;
 							return (
-								<button key={item.key} onClick={() => setActive(item.key)} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-600 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+								<button key={item.key} onClick={() => setActive(item.key)} className={`rounded - full px - 4 py - 2 text - sm font - medium transition - colors ${isActive ? "bg-green-600 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} `}>
 									{item.label}
 								</button>
 							);
@@ -436,7 +762,7 @@ export default function ParentsDashboardPage() {
 							))}
 						</section>
 
-						<section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						<section className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-6">
 							<div className="lg:col-span-2 space-y-6">
 								<div className="rounded-xl bg-white border border-gray-100 shadow-sm">
 									<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -449,17 +775,22 @@ export default function ParentsDashboardPage() {
 										</Link>
 									</div>
 									<ul className="divide-y divide-gray-100">
-										{notices.map((notice) => (
-											<li key={notice.id} className="px-4 py-3 flex items-start justify-between">
-												<div>
-													<p className="text-sm font-semibold text-gray-900">{notice.title}</p>
-													<p className="text-xs text-gray-500">
-														{notice.date} · {notice.type}
-													</p>
-												</div>
-												<span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-1 border border-blue-100">New</span>
-											</li>
-										))}
+										{noticesData
+											.filter((n) => {
+												if (!n.classGroup) return true;
+												if (allowedClassLabels.size === 0) return true;
+												return allowedClassLabels.has(n.classGroup.toString().trim().toLowerCase());
+											})
+											.slice(0, 3)
+											.map((notice) => (
+												<li key={notice.id} className="px-4 py-3 flex items-start justify-between">
+													<div>
+														<p className="text-sm font-semibold text-gray-900">{notice.title}</p>
+														<p className="text-xs text-gray-500">{notice.date}</p>
+													</div>
+													<span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-1 border border-blue-100">New</span>
+												</li>
+											))}
 									</ul>
 								</div>
 
@@ -482,7 +813,7 @@ export default function ParentsDashboardPage() {
 														{meeting.date} · {meeting.time}
 													</p>
 												</div>
-												<span className={`text-xs rounded-full px-2 py-1 border ${meeting.status === "Confirmed" ? "bg-green-50 text-green-700 border-green-100" : "bg-yellow-50 text-yellow-700 border-yellow-100"}`}>{meeting.status}</span>
+												<span className={`text - xs rounded - full px - 2 py - 1 border ${meeting.status === "Confirmed" ? "bg-green-50 text-green-700 border-green-100" : "bg-yellow-50 text-yellow-700 border-yellow-100"} `}>{meeting.status}</span>
 											</li>
 										))}
 									</ul>
@@ -492,51 +823,29 @@ export default function ParentsDashboardPage() {
 							<div className="space-y-6">
 								<div className="rounded-xl bg-white border border-gray-100 shadow-sm">
 									<div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-										<CreditCard className="h-4 w-4 text-purple-600" />
-										<h2 className="text-base font-semibold text-gray-900">Invoices</h2>
-									</div>
-									<ul className="divide-y divide-gray-100">
-										{invoices.map((invoice) => (
-											<li key={invoice.id} className="px-4 py-3 flex items-center justify-between">
-												<div>
-													<p className="text-sm font-semibold text-gray-900">{invoice.label}</p>
-													<p className="text-xs text-gray-500">Due {invoice.due}</p>
-												</div>
-												<div className="text-right">
-													<p className="text-sm font-semibold text-gray-900">{invoice.amount}</p>
-													<span className={`text-xs rounded-full px-2 py-1 border ${invoice.status === "Paid" ? "bg-green-50 text-green-700 border-green-100" : "bg-red-50 text-red-700 border-red-100"}`}>{invoice.status}</span>
-												</div>
-											</li>
-										))}
-									</ul>
-									<div className="px-4 py-3">
-										<Link href="#" className="text-sm text-green-700 hover:underline">
-											View payment history
-										</Link>
-									</div>
-								</div>
-
-								<div className="rounded-xl bg-white border border-gray-100 shadow-sm">
-									<div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-										<Images className="h-4 w-4 text-pink-600" />
+										<ImageIcon className="h-4 w-4 text-pink-600" />
 										<h2 className="text-base font-semibold text-gray-900">Gallery</h2>
 									</div>
 									<ul className="divide-y divide-gray-100">
-										{galleries.map((gallery) => (
+										{loadingGallery && <p className="px-4 py-3 text-sm text-gray-500">Loading gallery stats...</p>}
+										{!loadingGallery && galleryStats.length === 0 && <p className="px-4 py-3 text-sm text-gray-500">No photos available.</p>}
+										{galleryStats.slice(0, 5).map((gallery) => (
 											<li key={gallery.id} className="px-4 py-3 flex items-center justify-between">
 												<p className="text-sm font-semibold text-gray-900">{gallery.label}</p>
-												<span className="text-xs text-gray-500">{gallery.count} photos</span>
+												<span className="text-xs text-gray-500">
+													{gallery.count} {gallery.count === 1 ? "photo" : "photos"}
+												</span>
 											</li>
 										))}
 									</ul>
 									<div className="px-4 py-3">
-										<Link href="#" className="text-sm text-green-700 hover:underline">
+										<button onClick={() => setActive("gallery")} className="text-sm text-green-700 hover:underline">
 											Open gallery
-										</Link>
+										</button>
 									</div>
 								</div>
 
-								<div className="rounded-xl bg-white border border-gray-100 shadow-sm">
+								{/* <div className="rounded-xl bg-white border border-gray-100 shadow-sm">
 									<div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
 										<Bus className="h-4 w-4 text-indigo-600" />
 										<h2 className="text-base font-semibold text-gray-900">Transport routes</h2>
@@ -552,11 +861,11 @@ export default function ParentsDashboardPage() {
 											</li>
 										))}
 									</ul>
-								</div>
+								</div> */}
 							</div>
 						</section>
 
-						<section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+						{/* <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
 							<div className="rounded-xl bg-white border border-gray-100 shadow-sm p-4 flex items-center gap-3">
 								<Home className="h-5 w-5 text-teal-600" />
 								<div>
@@ -575,10 +884,10 @@ export default function ParentsDashboardPage() {
 								<Bell className="h-5 w-5 text-amber-600" />
 								<div>
 									<p className="text-sm font-semibold text-gray-900">Notifications</p>
-									<p className="text-xs text-gray-500">Control alerts for notices and invoices.</p>
+									<p className="text-xs text-gray-500">Control alerts for notices.</p>
 								</div>
 							</div>
-						</section>
+						</section> */}
 					</div>
 				)}
 
@@ -605,7 +914,7 @@ export default function ParentsDashboardPage() {
 												<p className="text-sm font-semibold text-gray-900">{child.name}</p>
 												<p className="text-xs text-gray-600">Class: {child.classGroup || "-"}</p>
 											</div>
-											<Link href={`/parents/dashboard/students/${child.id}`} className="text-xs font-semibold text-green-700 hover:underline">
+											<Link href={`/ parents / dashboard / students / ${child.id} `} className="text-xs font-semibold text-green-700 hover:underline">
 												View details
 											</Link>
 										</div>
@@ -616,25 +925,203 @@ export default function ParentsDashboardPage() {
 					</section>
 				)}
 
+				{active === "messages" && (
+					<section className="rounded-xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
+						<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+								<p className="text-sm text-gray-600">Chat with your child’s teacher and keep all replies in one place.</p>
+							</div>
+							<div className="flex flex-wrap gap-2">
+								<button type="button" onClick={() => fetchMessages()} className="rounded-full px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200">
+									Refresh
+								</button>
+							</div>
+						</div>
+
+						{messagesError && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{messagesError}</div>}
+
+						<div className="grid gap-4 lg:grid-cols-3">
+							<div className="space-y-2 lg:col-span-1">
+								<div className="rounded-lg border border-gray-100 bg-gray-50 p-3 shadow-sm h-full">
+									<div className="flex items-center justify-between mb-2">
+										<h3 className="text-sm font-semibold text-gray-900">Conversations</h3>
+										<span className="text-xs text-gray-500">{messages.length} total</span>
+									</div>
+									<div className="space-y-2 max-h-[520px] overflow-y-auto">
+										{messagesLoading && <p className="text-sm text-gray-600">Loading messages...</p>}
+										{!messagesLoading && messages.length === 0 && <p className="text-sm text-gray-600">No messages yet.</p>}
+										{messages.map((msg) => {
+											const msgId = msg._id || msg.id;
+											const lastEntry = (msg.messages || []).slice(-1)[0];
+											const snippet = lastEntry?.body?.slice(0, 80) || msg.message || "";
+											const lastAt = formatDateTime(msg.lastMessageAt || lastEntry?.createdAt || msg.createdAt);
+											const isSelected = msgId === selectedMessageId;
+											return (
+												<button key={msgId} type="button" onClick={() => setSelectedMessageId(msgId)} className={`w - full text - left rounded - lg border px - 3 py - 2 transition ${isSelected ? "border-blue-200 bg-blue-50" : "border-gray-100 bg-white hover:border-blue-100"} `}>
+													<div className="flex items-start justify-between gap-2">
+														<div className="space-y-1">
+															<p className="text-sm font-semibold text-gray-900">{`${msg.firstName || "Parent"} ${msg.lastName || ""} `.trim()}</p>
+															<p className="text-xs text-gray-600">{msg.childName ? `Child: ${msg.childName} ` : "Child info pending"}</p>
+															<p className="text-xs text-gray-600 line-clamp-2">{snippet}</p>
+														</div>
+														<div className="flex flex-col items-end gap-1 text-right">
+															<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${msg.status === "closed" ? "bg-gray-100 text-gray-700 border-gray-200" : "bg-green-50 text-green-700 border-green-100"} `}>{msg.status === "closed" ? "Resolved" : "Open"}</span>
+															<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${msg.priority === "urgent" ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"} `}>{msg.priority === "urgent" ? "Urgent" : "Normal"}</span>
+															<span className="text-[11px] text-gray-500">{lastAt}</span>
+														</div>
+													</div>
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							</div>
+
+							<div className="space-y-3 lg:col-span-2">
+								<div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4 min-h-[320px]">
+									{selectedMessage ? (
+										<div className="space-y-3">
+											<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+												<div>
+													<p className="text-base font-semibold text-gray-900">{`${selectedMessage.firstName || "Parent"} ${selectedMessage.lastName || ""} `.trim()}</p>
+													<p className="text-xs text-gray-600">
+														{selectedMessage.email} · {selectedMessage.phone || "No phone on file"}
+													</p>
+													<p className="text-xs text-gray-600">
+														{selectedMessage.childName ? `Child: ${selectedMessage.childName} ` : "Child info pending"} {selectedMessage.classGroup ? `· Class ${selectedMessage.classGroup} ` : ""}
+													</p>
+												</div>
+												<div className="flex flex-wrap gap-2 items-center">
+													<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${selectedMessage.status === "closed" ? "bg-gray-100 text-gray-700 border-gray-200" : "bg-green-50 text-green-700 border-green-100"} `}>{selectedMessage.status === "closed" ? "Resolved" : "Open"}</span>
+													<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${selectedMessage.priority === "urgent" ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"} `}>{selectedMessage.priority === "urgent" ? "Urgent" : "Normal"}</span>
+													<span className="text-[11px] px-2 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-100">{selectedMessage.topic || "General"}</span>
+												</div>
+											</div>
+
+											<div className="space-y-2 max-h-[360px] overflow-y-auto rounded-md border border-gray-100 bg-gray-50 p-3">
+												{(selectedMessage.messages || []).map((msg: any, idx: number) => {
+													const fromParent = msg.senderType !== "teacher";
+													return (
+														<div key={`${msg.createdAt || idx} -${idx} `} className={`flex ${fromParent ? "justify-start" : "justify-end"} `}>
+															<div className={`max - w - [80 %] rounded - lg px - 3 py - 2 text - sm shadow - sm ${fromParent ? "bg-white border border-gray-100 text-gray-900" : "bg-blue-600 text-white"} `}>
+																<div className={`text - [11px] mb - 1 ${fromParent ? "text-gray-500" : "text-blue-100"} `}>
+																	{fromParent ? msg.senderName || "You" : "Teacher"} · {formatDateTime(msg.createdAt || selectedMessage.createdAt)}
+																</div>
+																<p className="whitespace-pre-line leading-relaxed">{msg.body}</p>
+															</div>
+														</div>
+													);
+												})}
+											</div>
+
+											<div className="space-y-2">
+												<label className="text-sm text-gray-700 font-semibold">Reply to teacher</label>
+												<textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={3} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" placeholder="Type your reply" />
+												<div className="flex flex-wrap gap-2 items-center">
+													<button type="button" onClick={handleSendReply} disabled={!replyBody.trim()} className={`rounded - full px - 4 py - 2 text - sm font - semibold ${!replyBody.trim() ? "bg-gray-200 text-gray-500" : "bg-blue-600 text-white hover:bg-blue-700"} `}>
+														Send reply
+													</button>
+												</div>
+											</div>
+										</div>
+									) : (
+										<p className="text-sm text-gray-600">Select a conversation to view messages.</p>
+									)}
+								</div>
+
+								<div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
+									<h3 className="text-sm font-semibold text-gray-900 mb-2">Start a new message</h3>
+									<form onSubmit={handleCreateMessage} className="space-y-3">
+										<div className="grid gap-3 md:grid-cols-3">
+											<label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2">
+												<span className="font-semibold text-gray-900">Select child</span>
+												<select value={newMessageForm.studentId} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, studentId: e.target.value }))} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+													{children.length === 0 && <option value="">No children found</option>}
+													{children.map((child) => {
+														const childId = (child as any).id || (child as any)._id;
+														return (
+															<option key={childId} value={childId}>
+																{child.name} {child.classGroup ? `· Class ${child.classGroup} ` : ""}
+															</option>
+														);
+													})}
+												</select>
+											</label>
+											<label className="flex flex-col gap-1 text-sm text-gray-700">
+												<span className="font-semibold text-gray-900">Priority</span>
+												<select value={newMessageForm.priority} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, priority: e.target.value }))} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+													<option value="normal">Normal</option>
+													<option value="urgent">Urgent</option>
+												</select>
+											</label>
+										</div>
+										<label className="flex flex-col gap-1 text-sm text-gray-700">
+											<span className="font-semibold text-gray-900">Topic (optional)</span>
+											<input value={newMessageForm.topic} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, topic: e.target.value }))} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" placeholder="Transportation, homework, attendance..." />
+										</label>
+										<label className="flex flex-col gap-1 text-sm text-gray-700">
+											<span className="font-semibold text-gray-900">Message</span>
+											<textarea value={newMessageForm.message} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, message: e.target.value }))} rows={4} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" placeholder="Share your question or update" />
+										</label>
+										<div className="flex items-center justify-between gap-3 flex-wrap">
+											{messagesError && <span className="text-sm text-red-700">{messagesError}</span>}
+											<button type="submit" disabled={creatingMessage} className={`rounded - full px - 4 py - 2 text - sm font - semibold ${creatingMessage ? "bg-gray-200 text-gray-500" : "bg-green-600 text-white hover:bg-green-700"} `}>
+												{creatingMessage ? "Sending..." : "Send to teacher"}
+											</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					</section>
+				)}
+
 				{active === "notices" && (
-					<section className="rounded-xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
-						<h2 className="text-lg font-semibold text-gray-900">Notices</h2>
+					<section className="rounded-xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+							<h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+								<Bell className="w-5 h-5 text-blue-600" /> Notices
+							</h2>
+							<input type="text" placeholder="Search notices..." value={noticeSearch} onChange={(e) => setNoticeSearch(e.target.value)} className="rounded border border-gray-200 px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+						</div>
 						{loadingNotices && <div className="text-sm text-gray-500">Loading notices...</div>}
 						{noticesError && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{noticesError}</div>}
 						{!loadingNotices && !noticesError && noticesData.length === 0 && <div className="text-sm text-gray-600">No notices available.</div>}
 
 						{noticesData.length > 0 && (
 							<ul className="divide-y divide-gray-100">
-								{noticesData.map((notice) => (
-									<li key={notice.id} className="py-3 flex items-start justify-between gap-3">
-										<div>
-											<p className="text-sm font-semibold text-gray-900">{notice.title}</p>
-											<p className="text-xs text-gray-500">{notice.date}</p>
-											<p className="text-sm text-gray-700 mt-1 line-clamp-2">{notice.body}</p>
-										</div>
-										<span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-1 border border-blue-100 self-start">New</span>
-									</li>
-								))}
+								{noticesData
+									.filter((n) => {
+										// Search filter
+										const matchesSearch = n.title.toLowerCase().includes(noticeSearch.toLowerCase()) || n.body.toLowerCase().includes(noticeSearch.toLowerCase()) || n.date.toLowerCase().includes(noticeSearch.toLowerCase());
+										if (!matchesSearch) return false;
+
+										// Class filter
+										if (!n.classGroup) return true; // Show general notices
+										if (allowedClassLabels.size === 0) return true;
+										return allowedClassLabels.has(n.classGroup.toString().trim().toLowerCase());
+									})
+									.map((notice) => {
+										const isExpanded = expandedNotice === notice.id;
+										return (
+											<li key={notice.id} className="py-3">
+												<button className="w-full text-left flex items-center justify-between gap-2 group focus:outline-none" onClick={() => setExpandedNotice(isExpanded ? null : notice.id)} aria-expanded={isExpanded}>
+													<div>
+														<span className="text-base font-semibold text-gray-900 group-hover:text-blue-700 transition">{notice.title}</span>
+														<span className="ml-2 text-xs text-gray-500">{notice.date}</span>
+														{notice.classGroup && <span className="ml-2 text-xs rounded-full bg-gray-100 px-2 py-0.5 text-gray-600 border border-gray-200">{notice.classGroup}</span>}
+													</div>
+													<span className={`ml - 2 transition - transform ${isExpanded ? "rotate-90" : "rotate-0"} `}>
+														<ChevronRight className="w-4 h-4 text-gray-400" />
+													</span>
+												</button>
+												<div className={`mt - 2 pl - 1 pr - 2 text - gray - 700 text - sm transition - all duration - 200 ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"} `} style={{ willChange: "max-height, opacity" }}>
+													{notice.body}
+												</div>
+											</li>
+										);
+									})}
 							</ul>
 						)}
 					</section>
@@ -661,7 +1148,7 @@ export default function ParentsDashboardPage() {
 												setActiveGalleryFilter(filter);
 												setGalleryPage(1);
 											}}
-											className={`rounded-full px-3 py-1 text-xs font-semibold transition ${isActive ? "bg-green-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+											className={`rounded - full px - 3 py - 1 text - xs font - semibold transition ${isActive ? "bg-green-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} `}
 										>
 											{filter}
 										</button>
@@ -682,7 +1169,12 @@ export default function ParentsDashboardPage() {
 										return (
 											<button type="button" key={item.id} onClick={() => openLightbox(globalIndex)} className="group relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
 												<div className="relative h-32 w-full">
-													<Image src={item.url} alt={item.alt || "Classroom photo"} fill sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover transition duration-200 group-hover:scale-[1.03]" referrerPolicy="no-referrer" unoptimized />
+													<Image
+														src="/images/gallery/classroom.jpg"
+														alt="Gallery Preview"
+														fill
+														className="object-cover transition - transform duration - 500 group - hover: scale - 110"
+													/>
 												</div>
 												<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition" />
 												<div className="absolute bottom-1 left-1 rounded bg-white/80 px-2 py-0.5 text-[11px] text-gray-700">{item.category || "Photo"}</div>
@@ -749,7 +1241,7 @@ export default function ParentsDashboardPage() {
 								<h2 className="text-lg font-semibold text-gray-900">School Meals</h2>
 								<p className="text-sm text-gray-600">Sample week plan (6 days · Breakfast, Lunch, Snack).</p>
 							</div>
-							<span className="text-xs rounded-full bg-yellow-100 text-yellow-800 px-2 py-1 border border-yellow-200">Sample</span>
+							{/* <span className="text-xs rounded-full bg-yellow-100 text-yellow-800 px-2 py-1 border border-yellow-200">Sample</span> */}
 						</div>
 
 						<div className="grid gap-4">
@@ -760,7 +1252,7 @@ export default function ParentsDashboardPage() {
 											<p className="text-xs text-gray-500">Day</p>
 											<p className="text-sm font-semibold text-gray-900">{plan.day}</p>
 										</div>
-										<span className="text-[11px] rounded-full bg-gray-100 text-gray-800 px-2 py-1 border border-gray-200">Sample day</span>
+										{/* <span className="text-[11px] rounded-full bg-gray-100 text-gray-800 px-2 py-1 border border-gray-200">Sample day</span> */}
 									</div>
 
 									<div className="grid gap-3 md:grid-cols-3">
@@ -794,63 +1286,267 @@ export default function ParentsDashboardPage() {
 
 						{eventsData.length > 0 && (
 							<div className="grid gap-3 md:grid-cols-2">
-								{eventsData.map((event) => {
-									const parts = toEventDateParts(event.date);
-									return (
-										<div key={event.id} className="flex gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
-											<div className="flex flex-col items-center justify-center rounded-lg bg-gradient-to-b from-green-600 to-emerald-500 text-white px-4 py-3 min-w-[88px]">
-												<span className="text-xs font-semibold tracking-widest">{parts.month}</span>
-												<span className="text-3xl font-bold leading-none">{parts.day || "—"}</span>
-											</div>
-											<div className="flex-1 space-y-1">
-												<div className="flex items-start justify-between gap-2">
-													<p className="text-sm font-semibold text-gray-900 leading-tight">{event.title}</p>
-													<span className="text-[11px] text-gray-500">{event.date || "Date TBA"}</span>
+								{eventsData
+									.filter((event) => {
+										if (!event.classLabel) return true; // Show to all if no class specified
+										if (allowedClassLabels.size === 0) return true; // Show all if no children (or logic specific) - actually provided logic implies show based on children.
+										// If we have allowedClassLabels, we strictly filter?
+										// The original logic for gallery was:
+										// if (!item.classLabel) return true;
+										// if (allowedClassLabels.size === 0) return false; (but here we might want to be lenient or strict)
+										// Let's stick to: if classLabel exists, it MUST match one of the allowed labels.
+										return allowedClassLabels.has(event.classLabel.toString().trim().toLowerCase());
+									})
+									.map((event) => {
+										const parts = toEventDateParts(event.date);
+										return (
+											<div key={event.id} className="flex gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+												<div className="flex flex-col items-center justify-center rounded-lg bg-gradient-to-b from-green-600 to-emerald-500 text-white px-4 py-3 min-w-[88px]">
+													<span className="text-xs font-semibold tracking-widest">{parts.month}</span>
+													<span className="text-3xl font-bold leading-none">{parts.day || "—"}</span>
 												</div>
-												<p className="text-xs text-gray-600">{event.venue || "Venue TBA"}</p>
-												{event.description && <p className="text-sm text-gray-700 line-clamp-2">{event.description}</p>}
+												<div className="flex-1 space-y-2">
+													<div className="flex flex-wrap items-start justify-between gap-3">
+														<p className="text-sm font-semibold text-gray-900 leading-tight min-w-[180px]">{event.title}</p>
+														<div className="flex flex-wrap items-center gap-2">
+															<span className="text-[11px] text-gray-600 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200">{event.date || "Date TBA"}</span>
+															<span className="text-[11px] rounded-full bg-gray-100 text-gray-800 px-2 py-0.5 border border-gray-200">{event.classLabel ? `Class ${event.classLabel} ` : "All classes"}</span>
+														</div>
+													</div>
+													<p className="text-xs text-gray-600">{event.venue || "Venue TBA"}</p>
+													{event.description && <p className="text-sm text-gray-700 line-clamp-2">{event.description}</p>}
+												</div>
 											</div>
-										</div>
-									);
-								})}
+										);
+									})}
 							</div>
 						)}
 					</section>
 				)}
 
-				{active === "invoices" && (
+				{active === "assignments" && (
 					<section className="rounded-xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
 						<div className="flex items-center justify-between">
-							<div>
-								<h2 className="text-lg font-semibold text-gray-900">Invoices</h2>
-								<p className="text-sm text-gray-600">See outstanding and paid items with due dates.</p>
-							</div>
-							<div className="flex gap-2 text-xs">
-								<span className="rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1">Outstanding: {invoices.filter((inv) => inv.status !== "Paid").length}</span>
-								<span className="rounded-full bg-green-50 text-green-700 border border-green-100 px-3 py-1">Paid: {invoices.filter((inv) => inv.status === "Paid").length}</span>
-							</div>
+							<h2 className="text-lg font-semibold text-gray-900">Assignments</h2>
+							<span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-1 border border-blue-100">All assignments for your child</span>
 						</div>
-
-						<div className="grid gap-3">
-							{invoices.map((invoice) => (
-								<div key={invoice.id} className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-									<div className="space-y-1">
-										<p className="text-sm font-semibold text-gray-900">{invoice.label}</p>
-										<p className="text-xs text-gray-600">Ref: {invoice.reference}</p>
-									</div>
-									<div className="flex flex-col items-start md:items-end gap-1">
-										<p className="text-base font-semibold text-gray-900">{invoice.amount}</p>
-										<p className="text-xs text-gray-600">Due {invoice.due}</p>
-										<span className={`text-xs rounded-full px-2 py-1 border ${invoice.status === "Paid" ? "bg-green-50 text-green-700 border-green-100" : invoice.status === "Due" ? "bg-red-50 text-red-700 border-red-100" : "bg-yellow-50 text-yellow-700 border-yellow-100"}`}>{invoice.status}</span>
-									</div>
-								</div>
-							))}
-						</div>
-
-						<div className="rounded-md border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">For any billing questions or to request a receipt copy, please contact the school office.</div>
+						{loadingAssignments && <div className="text-sm text-gray-500">Loading assignments...</div>}
+						{assignmentsError && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{assignmentsError}</div>}
+						{!loadingAssignments && !assignmentsError && assignments.length === 0 && <div className="text-sm text-gray-600">No assignments found.</div>}
+						{assignments.length > 0 && (
+							<ul className="divide-y divide-gray-100">
+								{assignments
+									.filter((a) => {
+										if (!a.classGroup) return true;
+										// If we have allowedClassLabels, it must match
+										return allowedClassLabels.has(a.classGroup.toString().trim().toLowerCase());
+									})
+									.map((a, idx) => (
+										<li key={a._id} className={`p - 4 flex flex - col md: flex - row md: items - center md: justify - between gap - 2 ${idx % 2 === 0 ? "bg-gray-50" : "bg-gray-100"} `}>
+											<div>
+												<p className="text-base font-semibold text-gray-900">{a.title || a.assignmentTitle || "Untitled Assignment"}</p>
+												{a.classGroup && <span className="text-xs text-gray-500 mr-2">Class: {a.classGroup}</span>}
+												{a.status && <span className="text-xs rounded-full bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 ml-1">{a.status}</span>}
+												{a.dueDate && <span className="text-xs text-amber-600 ml-2">Due: {a.dueDate?.slice(0, 10)}</span>}
+												{a.description && <p className="text-sm text-gray-700 mt-1">{a.description}</p>}
+											</div>
+											{/* YouTube video */}
+											{a.youtube && (
+												<div className="mt-2">
+													<iframe width="360" height="203" src={a.youtube.includes("youtube.com") || a.youtube.includes("youtu.be") ? a.youtube.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/") : a.youtube} title="YouTube video" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="rounded-lg w-full max-w-md"></iframe>
+												</div>
+											)}
+											{/* Alternate YouTube URL field */}
+											{a.youtubeUrl && !a.youtube && (
+												<div className="mt-2">
+													<iframe width="360" height="203" src={a.youtubeUrl.includes("youtube.com") || a.youtubeUrl.includes("youtu.be") ? a.youtubeUrl.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/") : a.youtubeUrl} title="YouTube video" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="rounded-lg w-full max-w-md"></iframe>
+												</div>
+											)}
+											{/* Attached resources */}
+											{Array.isArray(a.resources) && a.resources.length > 0 && (
+												<div className="mt-2">
+													<div className="text-xs font-semibold text-gray-700 mb-1">Resources:</div>
+													<ul className="list-disc list-inside space-y-1">
+														{a.resources.map((r: any, idx: number) => (
+															<li key={idx}>
+																{r.url ? (
+																	<a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">
+																		{r.label || r.url}
+																	</a>
+																) : (
+																	r.label || r
+																)}
+															</li>
+														))}
+													</ul>
+												</div>
+											)}
+											{/* Single resource link */}
+											{a.resource && (
+												<div className="mt-2">
+													<a href={a.resource} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">
+														{a.resourceLabel || a.resource}
+													</a>
+												</div>
+											)}
+											{/* Attachment */}
+											{a.attachment && (
+												<a href={a.attachment} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">
+													Download
+												</a>
+											)}
+										</li>
+									))}
+							</ul>
+						)}
 					</section>
 				)}
+				{active === "meetings" && (
+					<div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+						<div className="p-6 border-b border-gray-100 flex justify-between items-center">
+							<h2 className="text-lg font-semibold text-gray-900">Appointments & Meetings</h2>
+							<button
+								onClick={() => setShowAppointmentModal(true)}
+								className="text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium hover:bg-green-100 transition"
+							>
+								+ New Request
+							</button>
+						</div>
+						<div className="divide-y divide-gray-100">
+							{loadingAppointments ? (
+								<p className="p-6 text-gray-500 text-center">Loading appointments...</p>
+							) : filteredAppointments.length === 0 ? (
+								<div className="p-8 text-center">
+									<p className="text-gray-500">No appointments found.</p>
+								</div>
+							) : (
+								filteredAppointments.map((apt) => (
+									<div key={apt._id} className="p-6 hover:bg-gray-50 transition">
+										<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+											<div>
+												<div className="flex items-center gap-2 mb-1">
+													<span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${apt.status === "confirmed" || apt.status === "scheduled" ? "bg-green-50 text-green-700 border-green-200" :
+														apt.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
+															apt.status === "proposed" ? "bg-amber-50 text-amber-700 border-amber-200" :
+																apt.status === "completed" ? "bg-blue-50 text-blue-700 border-blue-200" :
+																	"bg-gray-100 text-gray-700 border-gray-200"
+														} `}>
+														{apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+													</span>
+													<span className="text-xs text-gray-500">
+														{new Date(apt.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {apt.time}
+													</span>
+												</div>
+												<h3 className="text-base font-semibold text-gray-900 mb-1">{apt.topic || "Teacher Meeting"}</h3>
+												<p className="text-sm text-gray-600">
+													<span className="font-medium">Teacher:</span> {apt.teacherId?.firstName} {apt.teacherId?.lastName}
+												</p>
+												<p className="text-sm text-gray-600">
+													<span className="font-medium">Child:</span> {apt.studentId?.firstName} {apt.studentId?.lastName}
+												</p>
+												{apt.reason && (
+													<div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200 max-w-xl">
+														<p className="text-xs font-medium text-gray-500 uppercase mb-1">
+															{apt.status === "rejected" ? "Reason:" : "Note:"}
+														</p>
+														<p className="text-sm text-gray-700 leading-relaxed">{apt.reason}</p>
+													</div>
+												)}
+
+												{appointmentAction.id === apt._id && appointmentAction.type === 'reject' && (
+													<div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200 max-w-xl">
+														<textarea
+															className="w-full rounded-lg border border-gray-200 p-2 text-sm focus:ring-2 focus:ring-red-500"
+															placeholder="Why are you rejecting this proposal?"
+															rows={2}
+															value={appointmentForm.reason}
+															onChange={(e) => setAppointmentForm({ reason: e.target.value })}
+														/>
+														<div className="flex gap-2">
+															<button
+																disabled={submittingAppointment}
+																onClick={() => handleUpdateAppointment(apt._id, "rejected", { reason: appointmentForm.reason })}
+																className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+															>
+																{submittingAppointment ? "Sending..." : "Confirm Rejection"}
+															</button>
+															<button
+																onClick={() => setAppointmentAction({ type: null, id: null })}
+																className="text-xs bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-50"
+															>
+																Cancel
+															</button>
+														</div>
+													</div>
+												)}
+											</div>
+
+											<div className="flex flex-col sm:items-end gap-2">
+												{apt.status === "proposed" && !appointmentAction.id && (
+													<div className="flex gap-2">
+														<button
+															disabled={submittingAppointment}
+															onClick={() => handleUpdateAppointment(apt._id, "confirmed")}
+															className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
+														>
+															Accept
+														</button>
+														<button
+															onClick={() => setAppointmentAction({ type: 'reject', id: apt._id })}
+															className="text-xs bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-red-50"
+														>
+															Reject
+														</button>
+													</div>
+												)}
+												{(apt.status === "confirmed" || apt.status === "scheduled") && (
+													<button
+														disabled={submittingAppointment}
+														onClick={() => {
+															if (confirm("Mark this meeting as completed?")) {
+																handleUpdateAppointment(apt._id, "completed");
+															}
+														}}
+														className="flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-100 disabled:opacity-50"
+													>
+														<UserCheck className="w-3.5 h-3.5" />
+														Completed
+													</button>
+												)}
+											</div>
+										</div>
+									</div>
+								))
+							)}
+						</div>
+					</div>
+				)}
 			</main>
+
+			<AppointmentModal
+				isOpen={showAppointmentModal}
+				onClose={(refresh?: boolean) => {
+					setShowAppointmentModal(false);
+					if (refresh) setActive("meetings"); // Switch to meetings tab to see the new request
+				}}
+				students={children}
+				preSelectedStudentId={selectedStudent?._id || selectedStudent?.id}
+			/>
+
+			<Lightbox
+				open={lightboxOpen}
+				close={() => setLightboxOpen(false)}
+				index={lightboxIndex}
+				slides={galleryMedia.map(item => ({ src: item.url, alt: item.alt }))}
+			/>
 		</div>
+	);
+}
+
+export default function ParentsDashboardPage() {
+	return (
+		<Suspense fallback={<div className="p-6">Loading...</div>}>
+			<ParentsDashboardPageContent />
+		</Suspense>
 	);
 }

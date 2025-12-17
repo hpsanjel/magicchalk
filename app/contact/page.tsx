@@ -19,7 +19,7 @@ const formSchema = z.object({
 	firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
 	lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
 	email: z.string().email({ message: "Invalid email address." }),
-	phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
+	phone: z.string().trim().min(1, { message: "Phone number is required." }),
 	message: z.string().min(10, { message: "Message must be at least 10 characters." }),
 	agreeToTerms: z.boolean().refine((value) => value === true, {
 		message: "You must agree to the privacy policy.",

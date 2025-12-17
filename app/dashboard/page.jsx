@@ -8,6 +8,9 @@ export default function DashboardGrid() {
 
 	const menuItems = [
 		{ name: "Hero", icon: Calendar, href: "/dashboard/hero", id: "hero", color: "bg-blue-900" },
+		{ name: "Students", icon: Calendar, href: "/dashboard/students", id: "students", color: "bg-blue-900" },
+		{ name: "Teachers", icon: Calendar, href: "/dashboard/teachers", id: "teachers", color: "bg-blue-900" },
+		{ name: "Parents", icon: Calendar, href: "/dashboard/parents", id: "parents", color: "bg-blue-900" },
 		{ name: "Contact Messages", icon: Book, href: "/dashboard/contactmessages", id: "contactmessages", color: "bg-red-900" },
 		{ name: "Appointments", icon: Book, href: "/dashboard/appointments", id: "appointments", color: "bg-green-900" },
 		{ name: "Admissions", icon: Book, href: "/dashboard/admissions", id: "admissions", color: "bg-red-700" },

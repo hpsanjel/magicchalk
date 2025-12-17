@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 
-export default function ParentSetPasswordPage() {
+function ParentSetPasswordPageContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const emailFromQuery = searchParams.get("email") || "";
@@ -76,5 +76,13 @@ export default function ParentSetPasswordPage() {
 				</form>
 			</main>
 		</div>
+	);
+}
+
+export default function ParentSetPasswordPage() {
+	return (
+		<Suspense fallback={<div className="p-6">Loading...</div>}>
+			<ParentSetPasswordPageContent />
+		</Suspense>
 	);
 }

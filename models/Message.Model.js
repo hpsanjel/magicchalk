@@ -19,13 +19,71 @@ const MessageSchema = new mongoose.Schema({
 	phone: {
 		type: String,
 		required: [true, "Phone number is required"],
-		minlength: [10, "Phone number must be at least 10 digits long"],
 	},
 
 	message: {
 		type: String,
 		required: [true, "Message is required"],
 		minlength: [10, "Message must be at least 10 characters long"],
+	},
+	childName: {
+		type: String,
+		default: "",
+	},
+	classGroup: {
+		type: String,
+		default: "",
+	},
+	relation: {
+		type: String,
+		default: "Parent/Guardian",
+	},
+	topic: {
+		type: String,
+		default: "",
+	},
+	priority: {
+		type: String,
+		enum: ["normal", "urgent"],
+		default: "normal",
+	},
+	status: {
+		type: String,
+		enum: ["open", "closed"],
+		default: "open",
+	},
+	studentId: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Student",
+		default: null,
+	},
+	messages: {
+		type: [
+			{
+				senderType: { type: String, enum: ["parent", "teacher"], required: true },
+				senderName: { type: String, default: "" },
+				body: { type: String, required: true },
+				via: { type: String, default: "portal" },
+				createdAt: { type: Date, default: Date.now },
+			},
+		],
+		default: [],
+	},
+	lastMessageAt: {
+		type: Date,
+		default: Date.now,
+	},
+	unreadForTeacher: {
+		type: Boolean,
+		default: true,
+	},
+	unreadForParent: {
+		type: Boolean,
+		default: false,
+	},
+	teacherEmail: {
+		type: String,
+		default: "",
 	},
 	createdAt: {
 		type: Date,
