@@ -6,24 +6,12 @@ import React, { useMemo, useState, useEffect, useCallback, Suspense } from "reac
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-	ChevronRight,
-	MessageSquare,
-	X,
-	Image as ImageIcon,
-	Info,
-	CalendarDays,
-	Bell, ChevronLeft, UserCheck
-} from "lucide-react";
+import { ChevronRight, MessageSquare, X, Image as ImageIcon, Info, CalendarDays, Bell, ChevronLeft, UserCheck } from "lucide-react";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import AppointmentModal from "./appointment-modal";
 
 // Hardcoded data moved or removed in favor of dynamic state
-
-
-
-
 
 type Assignment = {
 	_id: string;
@@ -209,7 +197,7 @@ function ParentsDashboardPageContent() {
 	const [appointments, setAppointments] = useState<any[]>([]);
 	const [loadingAppointments, setLoadingAppointments] = useState(false);
 	const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-	const [appointmentAction, setAppointmentAction] = useState<{ type: 'accept' | 'reject' | 'complete' | null, id: string | null }>({ type: null, id: null });
+	const [appointmentAction, setAppointmentAction] = useState<{ type: "accept" | "reject" | "complete" | null; id: string | null }>({ type: null, id: null });
 	const [appointmentForm, setAppointmentForm] = useState({ reason: "" });
 	const [submittingAppointment, setSubmittingAppointment] = useState(false);
 
@@ -227,14 +215,14 @@ function ParentsDashboardPageContent() {
 		try {
 			const decoded = decodeURIComponent(raw);
 			const parts = decoded.split("/");
-			let name = parts[parts.length - 1].split("?")[0]; // remove query params
+			const name = parts[parts.length - 1].split("?")[0]; // remove query params
 			if (name && name.length > 0 && !name.startsWith("http")) {
 				// If it looks like a Cloudinary public ID with folders, we already have the last part
 				// If it's too long, truncate it
 				return name.length > 40 ? name.substring(0, 37) + "..." : name;
 			}
 		} catch (e) {
-			// fallback
+			console.error("Error decoding resource label:", e);
 		}
 
 		return raw.length > 40 ? raw.substring(0, 37) + "..." : raw;
@@ -712,14 +700,11 @@ function ParentsDashboardPageContent() {
 
 	const filteredAppointments = useMemo(() => {
 		if (!selectedStudent) return appointments;
-		return appointments.filter(apt =>
-			!apt.studentId ||
-			String(apt.studentId._id || apt.studentId) === String(selectedStudent.id || selectedStudent._id)
-		);
+		return appointments.filter((apt) => !apt.studentId || String(apt.studentId._id || apt.studentId) === String(selectedStudent.id || selectedStudent._id));
 	}, [appointments, selectedStudent]);
 
 	const dashboardStats = useMemo(() => {
-		const upcomingMeetings = appointments.filter(a => a.status === 'confirmed' || a.status === 'scheduled').length;
+		const upcomingMeetings = appointments.filter((a) => a.status === "confirmed" || a.status === "scheduled").length;
 		const unreadNotices = noticesData.length; // Placeholder for unread logic if exists
 		return [
 			{ label: "Notices", value: unreadNotices, hint: "Total" },
@@ -738,9 +723,7 @@ function ParentsDashboardPageContent() {
 						<p className="text-sm text-gray-500">Stay on top of notices, meetings, and transport.</p>
 						{selectedStudent && (
 							<div className="mt-2 flex items-center gap-2">
-								<span className="text-sm font-medium text-green-800 bg-green-100 px-3 py-1 rounded-full">
-									Showing for: {selectedStudent.name}
-								</span>
+								<span className="text-sm font-medium text-green-800 bg-green-100 px-3 py-1 rounded-full">Showing for: {selectedStudent.name}</span>
 								<Link href="/parents/dashboard" className="text-xs text-gray-500 hover:text-gray-700 underline">
 									Clear filter
 								</Link>
@@ -748,10 +731,7 @@ function ParentsDashboardPageContent() {
 						)}
 					</div>
 					<div className="flex flex-wrap gap-2">
-						<button
-							onClick={() => setShowAppointmentModal(true)}
-							className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-white text-sm font-medium hover:bg-green-700 transition"
-						>
+						<button onClick={() => setShowAppointmentModal(true)} className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-white text-sm font-medium hover:bg-green-700 transition">
 							<CalendarDays className="h-4 w-4" />
 							Book Appointment
 						</button>
@@ -844,20 +824,16 @@ function ParentsDashboardPageContent() {
 									</div>
 									<ul className="divide-y divide-gray-100">
 										{loadingAppointments && <p className="p-4 text-sm text-gray-500">Loading...</p>}
-										{!loadingAppointments && filteredAppointments.length === 0 && (
-											<p className="p-4 text-sm text-gray-500">No upcoming meetings.</p>
-										)}
+										{!loadingAppointments && filteredAppointments.length === 0 && <p className="p-4 text-sm text-gray-500">No upcoming meetings.</p>}
 										{filteredAppointments.slice(0, 3).map((meeting) => (
 											<li key={meeting._id || meeting.id} className="px-4 py-3 flex items-center justify-between">
 												<div className="min-w-0 flex-1">
 													<p className="text-sm font-semibold text-gray-900 truncate">{meeting.topic || "Teacher Meeting"}</p>
 													<p className="text-xs text-gray-500">
-														{new Date(meeting.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {meeting.time}
+														{new Date(meeting.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {meeting.time}
 													</p>
 												</div>
-												<span className={`text-[10px] sm:text-xs rounded-full px-2 py-0.5 border shrink-0 ${meeting.status === "confirmed" || meeting.status === "scheduled" ? "bg-green-50 text-green-700 border-green-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
-													{meeting.status}
-												</span>
+												<span className={`text-[10px] sm:text-xs rounded-full px-2 py-0.5 border shrink-0 ${meeting.status === "confirmed" || meeting.status === "scheduled" ? "bg-green-50 text-green-700 border-green-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>{meeting.status}</span>
 											</li>
 										))}
 									</ul>
@@ -977,11 +953,7 @@ function ParentsDashboardPageContent() {
 								<p className="text-sm text-gray-600">Chat with your child’s teacher and keep all replies in one place.</p>
 							</div>
 							<div className="flex flex-wrap gap-2">
-								<button
-									type="button"
-									onClick={() => setShowNewMessageForm(!showNewMessageForm)}
-									className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showNewMessageForm ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-green-600 text-white hover:bg-green-700"}`}
-								>
+								<button type="button" onClick={() => setShowNewMessageForm(!showNewMessageForm)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showNewMessageForm ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-green-600 text-white hover:bg-green-700"}`}>
 									{showNewMessageForm ? "Cancel" : "Send Message"}
 								</button>
 								{!showNewMessageForm && (
@@ -1233,12 +1205,7 @@ function ParentsDashboardPageContent() {
 										return (
 											<button type="button" key={item.id} onClick={() => openLightbox(globalIndex)} className="group relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
 												<div className="relative h-32 w-full">
-													<Image
-														src="/images/gallery/classroom.jpg"
-														alt="Gallery Preview"
-														fill
-														className="object-cover transition-transform duration-500 group-hover:scale-110"
-													/>
+													<Image src={item.url} alt={item.alt || item.category || "Gallery Preview"} fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
 												</div>
 												<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition" />
 												<div className="absolute bottom-1 left-1 rounded bg-white/80 px-2 py-0.5 text-[11px] text-gray-700">{item.category || "Photo"}</div>
@@ -1465,10 +1432,7 @@ function ParentsDashboardPageContent() {
 					<div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 						<div className="p-6 border-b border-gray-100 flex justify-between items-center">
 							<h2 className="text-lg font-semibold text-gray-900">Appointments & Meetings</h2>
-							<button
-								onClick={() => setShowAppointmentModal(true)}
-								className="text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium hover:bg-green-100 transition"
-							>
+							<button onClick={() => setShowAppointmentModal(true)} className="text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium hover:bg-green-100 transition">
 								+ New Request
 							</button>
 						</div>
@@ -1485,16 +1449,9 @@ function ParentsDashboardPageContent() {
 										<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
 											<div>
 												<div className="flex items-center gap-2 mb-1">
-													<span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${apt.status === "confirmed" || apt.status === "scheduled" ? "bg-green-50 text-green-700 border-green-200" :
-														apt.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
-															apt.status === "proposed" || apt.status === "requested" || apt.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
-																apt.status === "completed" ? "bg-blue-50 text-blue-700 border-blue-200" :
-																	"bg-gray-100 text-gray-700 border-gray-200"
-														} `}>
-														{apt.status === "requested" ? "Requested" : apt.status === "pending" ? "Pending Approval" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-													</span>
+													<span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${apt.status === "confirmed" || apt.status === "scheduled" ? "bg-green-50 text-green-700 border-green-200" : apt.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" : apt.status === "proposed" || apt.status === "requested" || apt.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" : apt.status === "completed" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-700 border-gray-200"} `}>{apt.status === "requested" ? "Requested" : apt.status === "pending" ? "Pending Approval" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}</span>
 													<span className="text-xs text-gray-500">
-														{new Date(apt.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {apt.time}
+														{new Date(apt.date).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })} at {apt.time}
 													</span>
 												</div>
 												<h3 className="text-base font-semibold text-gray-900 mb-1">{apt.topic || "Teacher Meeting"}</h3>
@@ -1506,34 +1463,19 @@ function ParentsDashboardPageContent() {
 												</p>
 												{apt.reason && (
 													<div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200 max-w-xl">
-														<p className="text-xs font-medium text-gray-500 uppercase mb-1">
-															{apt.status === "rejected" ? "Reason:" : "Note:"}
-														</p>
+														<p className="text-xs font-medium text-gray-500 uppercase mb-1">{apt.status === "rejected" ? "Reason:" : "Note:"}</p>
 														<p className="text-sm text-gray-700 leading-relaxed">{apt.reason}</p>
 													</div>
 												)}
 
-												{appointmentAction.id === apt._id && appointmentAction.type === 'reject' && (
+												{appointmentAction.id === apt._id && appointmentAction.type === "reject" && (
 													<div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200 max-w-xl">
-														<textarea
-															className="w-full rounded-lg border border-gray-200 p-2 text-sm focus:ring-2 focus:ring-red-500"
-															placeholder="Why are you rejecting this proposal?"
-															rows={2}
-															value={appointmentForm.reason}
-															onChange={(e) => setAppointmentForm({ reason: e.target.value })}
-														/>
+														<textarea className="w-full rounded-lg border border-gray-200 p-2 text-sm focus:ring-2 focus:ring-red-500" placeholder="Why are you rejecting this proposal?" rows={2} value={appointmentForm.reason} onChange={(e) => setAppointmentForm({ reason: e.target.value })} />
 														<div className="flex gap-2">
-															<button
-																disabled={submittingAppointment}
-																onClick={() => handleUpdateAppointment(apt._id, "rejected", { reason: appointmentForm.reason })}
-																className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
-															>
+															<button disabled={submittingAppointment} onClick={() => handleUpdateAppointment(apt._id, "rejected", { reason: appointmentForm.reason })} className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50">
 																{submittingAppointment ? "Sending..." : "Confirm Rejection"}
 															</button>
-															<button
-																onClick={() => setAppointmentAction({ type: null, id: null })}
-																className="text-xs bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-50"
-															>
+															<button onClick={() => setAppointmentAction({ type: null, id: null })} className="text-xs bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-50">
 																Cancel
 															</button>
 														</div>
@@ -1544,17 +1486,10 @@ function ParentsDashboardPageContent() {
 											<div className="flex flex-col sm:items-end gap-2">
 												{apt.status === "proposed" && !appointmentAction.id && (
 													<div className="flex gap-2">
-														<button
-															disabled={submittingAppointment}
-															onClick={() => handleUpdateAppointment(apt._id, "confirmed")}
-															className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
-														>
+														<button disabled={submittingAppointment} onClick={() => handleUpdateAppointment(apt._id, "confirmed")} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50">
 															Accept
 														</button>
-														<button
-															onClick={() => setAppointmentAction({ type: 'reject', id: apt._id })}
-															className="text-xs bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-red-50"
-														>
+														<button onClick={() => setAppointmentAction({ type: "reject", id: apt._id })} className="text-xs bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-red-50">
 															Reject
 														</button>
 													</div>
@@ -1593,13 +1528,8 @@ function ParentsDashboardPageContent() {
 				preSelectedStudentId={selectedStudent?._id || selectedStudent?.id}
 			/>
 
-			<Lightbox
-				open={lightboxOpen}
-				close={() => setLightboxOpen(false)}
-				index={lightboxIndex}
-				slides={galleryMedia.map(item => ({ src: item.url, alt: item.alt }))}
-			/>
-		</div >
+			<Lightbox open={lightboxOpen} close={() => setLightboxOpen(false)} index={lightboxIndex} slides={galleryMedia.map((item) => ({ src: item.url, alt: item.alt }))} />
+		</div>
 	);
 }
 

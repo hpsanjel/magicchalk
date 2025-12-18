@@ -4,7 +4,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 
 const inputClass = "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500";
@@ -203,7 +202,6 @@ export default function ParentStudentDetailsPage() {
 						</div>
 					</div>
 				)}
-
 			</div>
 		</div>
 	);

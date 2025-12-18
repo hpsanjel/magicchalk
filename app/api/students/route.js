@@ -102,7 +102,7 @@ export async function POST(request) {
 
 		const created = await Student.insertMany(docs, { ordered: false });
 
-		const passwordSetBase = process.env.PARENT_PORTAL_PASSWORD_SET_URL || `${process.env.NEXT_PUBLIC_API_URL || "https://magicchalk.vercel.app"}/parent/set-password`;
+		const passwordSetBase = `${process.env.NEXT_PUBLIC_BASE_URL}/parent/set-password`;
 		Promise.allSettled(
 			created
 				.filter((s) => s.guardianEmail)

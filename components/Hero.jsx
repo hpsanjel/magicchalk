@@ -111,12 +111,12 @@ export default function Hero() {
 				{/* Content */}
 				<div className="relative max-w-6xl leading-relaxed z-10 text-white px-6 md:px-12">
 					{/* Heading */}
-					<motion.h1 className="text-4xl md:text-6xl font-bold mb-4" key={`title-${currentSlide}`} initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} transition={{ duration: 0.8 }}>
+					<motion.h1 className="text-2xl md:text-4xl font-bold mb-4" key={`title-${currentSlide}`} initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} transition={{ duration: 0.8 }}>
 						{currentSlideData.title}
 					</motion.h1>
 
 					{/* Subheading */}
-					<motion.p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto" key={`desc-${currentSlide}`} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.8, delay: 0.2 }}>
+					<motion.p className="text-md md:text-lg mb-8 max-w-2xl mx-auto" key={`desc-${currentSlide}`} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.8, delay: 0.2 }}>
 						{currentSlideData.description}
 					</motion.p>
 
