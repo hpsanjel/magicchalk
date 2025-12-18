@@ -82,6 +82,15 @@ export default function TeachersAdminPage() {
 					}
 					setTeachers(teacherData.teachers || []);
 					setClasses(classData.classes || []);
+					// Auto-generate next Employee ID
+					const empIds = (teacherData.teachers || []).map((t: any) => t.employeeId).filter((id: string) => /^EMP-\d{3}$/.test(id));
+					let maxNum = 0;
+					empIds.forEach((id: string) => {
+						const num = parseInt(id.replace("EMP-", ""), 10);
+						if (!isNaN(num) && num > maxNum) maxNum = num;
+					});
+					const nextId = `EMP-${String(maxNum + 1).padStart(3, "0")}`;
+					setForm((prev) => ({ ...prev, employeeId: nextId }));
 				}
 			} catch (err) {
 				const message = err instanceof Error ? err.message : "Failed to load data";
@@ -96,6 +105,8 @@ export default function TeachersAdminPage() {
 	}, []);
 
 	const handleChange = (key: keyof TeacherForm) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+		// Prevent manual change of employeeId
+		if (key === "employeeId") return;
 		const value = event.target.value;
 		setForm((prev) => ({ ...prev, [key]: value }));
 	};
@@ -188,7 +199,7 @@ export default function TeachersAdminPage() {
 						</div>
 						<div className="space-y-1">
 							<label className={labelClass}>Employee ID *</label>
-							<input className={inputClass} value={form.employeeId} onChange={handleChange("employeeId")} placeholder="EMP-001" />
+							<input className={inputClass} value={form.employeeId} placeholder="EMP-001" readOnly />
 						</div>
 						<div className="space-y-1">
 							<label className={labelClass}>Designation *</label>
@@ -289,9 +300,9 @@ export default function TeachersAdminPage() {
 										<td className="px-3 py-2 text-gray-700">
 											{Array.isArray(t.classIds) && t.classIds.length
 												? t.classIds
-													.map((c: any) => c?.name || "")
-													.filter(Boolean)
-													.join(", ")
+														.map((c: any) => c?.name || "")
+														.filter(Boolean)
+														.join(", ")
 												: "—"}
 										</td>
 										<td className="px-3 py-2 text-gray-700 capitalize">{t.status || "pending"}</td>
