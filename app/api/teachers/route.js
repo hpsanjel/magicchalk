@@ -88,9 +88,9 @@ export async function POST(request) {
 			subjects: Array.isArray(subjects)
 				? subjects
 				: String(subjects || "")
-					.split(",")
-					.map((s) => s.trim())
-					.filter(Boolean),
+						.split(",")
+						.map((s) => s.trim())
+						.filter(Boolean),
 			classIds: resolvedClassIds,
 			yearsOfExperience: Number(yearsOfExperience) || 0,
 			qualifications,
@@ -111,13 +111,22 @@ export async function POST(request) {
 		const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 		const passwordSetUrl = `${baseUrl}/user?email=${encodeURIComponent(normalizedEmail)}&token=${inviteToken}`;
 
-		await sendTeacherInviteEmail(normalizedEmail, {
-			teacherName: `${firstName} ${lastName}`.trim(),
-			employeeId,
-			designation,
-			passwordSetUrl,
-			username: normalizedEmail,
-		});
+		try {
+			await sendTeacherInviteEmail(normalizedEmail, {
+				teacherName: `${firstName} ${lastName}`.trim(),
+				employeeId,
+				designation,
+				passwordSetUrl,
+				username: normalizedEmail,
+			});
+		} catch (emailError) {
+			// Log more details if available
+			console.error("Error sending teacher invite email:", emailError);
+			if (emailError && emailError.response) {
+				console.error("Email error response:", emailError.response);
+			}
+			return NextResponse.json({ success: false, error: `Teacher created but invite email failed: ${emailError && emailError.message ? emailError.message : emailError}` }, { status: 500 });
+		}
 
 		return NextResponse.json({ success: true, teacher: teacherDoc }, { status: 201 });
 	} catch (error) {
