@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 
-const emptyForm = { name: "", slug: "", description: "", order: 0 };
+const emptyForm = { name: "", slug: "", description: "", room: "", homeroom: false, order: 0 };
 
 export default function ClassesPage() {
 	const [classes, setClasses] = useState([]);
@@ -64,7 +64,14 @@ export default function ClassesPage() {
 
 	const handleEdit = (cls) => {
 		setEditingId(cls._id);
-		setForm({ name: cls.name || "", slug: cls.slug || "", description: cls.description || "", order: cls.order ?? 0 });
+		setForm({
+			name: cls.name || "",
+			slug: cls.slug || "",
+			description: cls.description || "",
+			room: cls.room || "",
+			homeroom: !!cls.homeroom,
+			order: cls.order ?? 0,
+		});
 	};
 
 	const handleDelete = async (id) => {
@@ -93,6 +100,14 @@ export default function ClassesPage() {
 						<span className="text-sm font-medium text-gray-700">Slug (optional)</span>
 						<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="w-full rounded border border-gray-200 p-2" placeholder="pre-school" />
 					</label>
+					<label className="space-y-1">
+						<span className="text-sm font-medium text-gray-700">Room</span>
+						<input value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} className="w-full rounded border border-gray-200 p-2" placeholder="Room 101" />
+					</label>
+					<label className="space-y-1 flex items-center gap-2 pt-6">
+						<input type="checkbox" checked={form.homeroom} onChange={(e) => setForm({ ...form, homeroom: e.target.checked })} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+						<span className="text-sm font-medium text-gray-700">Homeroom</span>
+					</label>
 					<label className="space-y-1 md:col-span-2">
 						<span className="text-sm font-medium text-gray-700">Description (optional)</span>
 						<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded border border-gray-200 p-2" rows={2} />
@@ -117,9 +132,9 @@ export default function ClassesPage() {
 					<TableHeader>
 						<TableRow>
 							<TableHead>Name</TableHead>
-							<TableHead>Slug</TableHead>
+							<TableHead>Room</TableHead>
+							<TableHead>Type</TableHead>
 							<TableHead>Order</TableHead>
-							<TableHead>Description</TableHead>
 							<TableHead>Actions</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -131,17 +146,26 @@ export default function ClassesPage() {
 						) : classes.length ? (
 							classes.map((cls) => (
 								<TableRow key={cls._id}>
-									<TableCell>{cls.name}</TableCell>
-									<TableCell>{cls.slug}</TableCell>
+									<TableCell>
+										<div>
+											<p className="font-medium text-gray-900">{cls.name}</p>
+											<p className="text-xs text-gray-500 truncate max-w-[200px]">{cls.description}</p>
+										</div>
+									</TableCell>
+									<TableCell>{cls.room || "-"}</TableCell>
+									<TableCell>
+										<span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${cls.homeroom ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+											{cls.homeroom ? "Homeroom" : "Subject"}
+										</span>
+									</TableCell>
 									<TableCell>{cls.order}</TableCell>
-									<TableCell className="max-w-xs truncate text-sm text-gray-700">{cls.description}</TableCell>
 									<TableCell>
 										<div className="flex gap-2">
 											<Button variant="ghost" size="icon" onClick={() => handleEdit(cls)}>
-												<Pencil className="h-5 w-5 text-blue-700" />
+												<Pencil className="h-4 w-4 text-blue-700" />
 											</Button>
 											<Button variant="ghost" size="icon" onClick={() => handleDelete(cls._id)}>
-												<Trash2 className="h-5 w-5 text-red-700" />
+												<Trash2 className="h-4 w-4 text-red-700" />
 											</Button>
 										</div>
 									</TableCell>

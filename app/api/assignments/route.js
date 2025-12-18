@@ -62,7 +62,7 @@ export async function GET(request) {
 		};
 		await Assignment.updateMany(promotionFilter, { status: "Published" });
 
-		const assignments = await Assignment.find(filter).sort({ createdAt: -1 });
+		const assignments = await Assignment.find(filter).sort({ createdAt: -1 }).lean();
 		return NextResponse.json({ success: true, assignments }, { status: 200 });
 	} catch (error) {
 		console.error("Error fetching assignments:", error);

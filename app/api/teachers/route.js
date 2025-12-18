@@ -1,17 +1,39 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import connectDB from "@/lib/mongodb";
 import Teacher from "@/models/Teacher.Model";
 import User from "@/models/User.Model";
 import ClassModel from "@/models/Class.Model";
+import Student from "@/models/Student.Model";
 import { sendTeacherInviteEmail } from "@/lib/email";
 
 export async function GET() {
 	try {
 		await connectDB();
-		const teachers = await Teacher.find().populate({ path: "classIds", select: "name" }).sort({ createdAt: -1 });
-		return NextResponse.json({ success: true, teachers }, { status: 200 });
+		const teachers = await Teacher.find().populate({ path: "classIds" }).sort({ createdAt: -1 }).lean();
+
+		// For each teacher, enhance their class data with student counts
+		const enhancedTeachers = await Promise.all(
+			teachers.map(async (teacher) => {
+				if (Array.isArray(teacher.classIds)) {
+					const updatedClasses = await Promise.all(
+						teacher.classIds.map(async (cls) => {
+							if (typeof cls === "object" && cls.name) {
+								const studentCount = await Student.countDocuments({ classGroup: cls.name });
+								return { ...cls, studentsCount: studentCount };
+							}
+							return cls;
+						})
+					);
+					return { ...teacher, classIds: updatedClasses };
+				}
+				return teacher;
+			})
+		);
+
+		return NextResponse.json({ success: true, teachers: enhancedTeachers }, { status: 200 });
 	} catch (error) {
 		console.error("Error fetching teachers:", error);
 		return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -66,9 +88,9 @@ export async function POST(request) {
 			subjects: Array.isArray(subjects)
 				? subjects
 				: String(subjects || "")
-						.split(",")
-						.map((s) => s.trim())
-						.filter(Boolean),
+					.split(",")
+					.map((s) => s.trim())
+					.filter(Boolean),
 			classIds: resolvedClassIds,
 			yearsOfExperience: Number(yearsOfExperience) || 0,
 			qualifications,

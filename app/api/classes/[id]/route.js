@@ -20,15 +20,24 @@ export async function PUT(request, { params }) {
 	try {
 		await connectDB();
 		const body = await request.json();
-		const { name, slug, description = "", order } = body || {};
+		const { name, slug, description = "", room, homeroom, order } = body || {};
 
 		const update = {};
 		if (name) update.name = name.trim();
 		if (slug) update.slug = slug.trim();
 		if (description !== undefined) update.description = description;
+		if (room !== undefined) update.room = room;
+		if (homeroom !== undefined) update.homeroom = Boolean(homeroom);
 		if (order !== undefined) update.order = order;
 
-		if (!update.name && !update.slug && update.description === undefined && update.order === undefined) {
+		if (
+			!update.name &&
+			!update.slug &&
+			update.description === undefined &&
+			update.room === undefined &&
+			update.homeroom === undefined &&
+			update.order === undefined
+		) {
 			return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
 		}
 

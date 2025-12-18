@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { jwtVerify } from "jose";
 import connectDB from "@/lib/mongodb";
 import Appointment from "@/models/Appointment.Model";
@@ -62,7 +63,7 @@ export async function POST(request) {
             date: new Date(date),
             time,
             topic,
-            status: "pending",
+            status: "requested",
 
             // Relations
             teacherId,

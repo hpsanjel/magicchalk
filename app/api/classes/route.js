@@ -17,7 +17,7 @@ export async function POST(request) {
 	try {
 		await connectDB();
 		const body = await request.json();
-		const { name, slug, description = "", order = 0 } = body || {};
+		const { name, slug, description = "", room = "", homeroom = false, order = 0 } = body || {};
 
 		if (!name) {
 			return NextResponse.json({ success: false, error: "Name is required" }, { status: 400 });
@@ -33,6 +33,8 @@ export async function POST(request) {
 					.replace(/[^a-z0-9]+/g, "-")
 					.replace(/(^-|-$)/g, ""),
 			description,
+			room,
+			homeroom,
 			order,
 		};
 

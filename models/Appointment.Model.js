@@ -71,7 +71,7 @@ const appointmentSchema = new mongoose.Schema({
 
 	status: {
 		type: String,
-		enum: ["scheduled", "completed", "cancelled", "no-show", "pending", "confirmed", "rejected", "proposed"],
+		enum: ["scheduled", "completed", "cancelled", "no-show", "pending", "confirmed", "rejected", "proposed", "requested"],
 		default: "scheduled",
 	},
 
@@ -127,7 +127,11 @@ appointmentSchema.statics.findByDateRange = function (startDate, endDate) {
 	}).sort({ date: 1, time: 1 });
 };
 
-// Create the model
+// In development, the model might be cached with an old schema.
+// We delete it to ensure the new enum values (like "requested") are recognized.
+if (process.env.NODE_ENV === "development") {
+	delete mongoose.models.Appointment;
+}
 const Appointment = mongoose.models.Appointment || mongoose.model("Appointment", appointmentSchema);
 
 export default Appointment;

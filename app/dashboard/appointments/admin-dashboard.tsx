@@ -523,6 +523,7 @@ export default function AdminDashboard({ appointments = [], onRefresh }: AdminDa
 			case "confirmed":
 				return "bg-green-100 text-green-800";
 			case "pending":
+			case "requested":
 				return "bg-yellow-100 text-yellow-800";
 			case "no-show":
 				return "bg-orange-100 text-orange-800";

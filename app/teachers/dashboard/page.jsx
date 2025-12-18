@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, Pencil, Plus, Trash2, X, UserCheck, GraduationCap } from "lucide-react";
+import { CalendarDays, Clock, Pencil, Plus, Trash2, X, UserCheck, GraduationCap, Calendar } from "lucide-react";
 import EventForm from "@/components/EventForm";
 
 const overviewStats = [
@@ -25,8 +25,8 @@ const tabs = [
 	{ key: "gallery", label: "Gallery" },
 	{ key: "events", label: "Events" },
 	{ key: "appointments", label: "Appointments" },
-	{ key: "todo", label: "To-Do" },
-	{ key: "profile", label: "Profile" },
+	{ key: "todo", label: "My To-Dos" },
+	{ key: "profile", label: "My Profile" },
 ];
 const today = new Date();
 const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -65,6 +65,8 @@ export default function TeacherDashboardPage() {
 	const [creatingAssignment, setCreatingAssignment] = useState(false);
 	const [createAssignmentError, setCreateAssignmentError] = useState("");
 	const [assignmentFilterStatus, setAssignmentFilterStatus] = useState("All");
+	const [editingAssignmentId, setEditingAssignmentId] = useState(null);
+	const [deleteConfirmApt, setDeleteConfirmApt] = useState(null); // { id: string, title: string }
 	const [newAssignment, setNewAssignment] = useState({
 		title: "",
 		classGroup: "",
@@ -182,7 +184,7 @@ export default function TeacherDashboardPage() {
 				}
 				const userEmail = String(meData.user.email).trim().toLowerCase();
 
-				const teacherRes = await fetch("/api/teachers");
+				const teacherRes = await fetch("/api/teachers", { cache: "no-store" });
 				const teacherData = await teacherRes.json();
 				if (!teacherRes.ok || !teacherData?.success || !Array.isArray(teacherData.teachers)) {
 					throw new Error(teacherData?.error || "Unable to load teachers");
@@ -431,6 +433,66 @@ export default function TeacherDashboardPage() {
 		} finally {
 			setSubmittingAppointment(false);
 		}
+	};
+
+	const handleSyncCalendar = () => {
+		if (!appointments || appointments.length === 0) {
+			alert("No appointments to sync.");
+			return;
+		}
+
+		// Filter for active/meaningful appointments
+		const confirmed = appointments.filter((a) => ["confirmed", "scheduled", "completed"].includes(a.status));
+		if (confirmed.length === 0) {
+			alert("No confirmed or scheduled appointments found to sync.");
+			return;
+		}
+
+		let icsLines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//MagicChalk//Appointments//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+
+		const formatICSDate = (date) => {
+			return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+		};
+
+		confirmed.forEach((apt) => {
+			try {
+				const aptDate = new Date(apt.date);
+				const [hours, minutes] = (apt.time || "09:00").split(":").map(Number);
+
+				const start = new Date(aptDate);
+				start.setHours(hours, minutes, 0);
+
+				const end = new Date(start);
+				end.setMinutes(end.getMinutes() + 30); // Default 30 min duration
+
+				const studentName = apt.studentId ? `${apt.studentId.firstName} ${apt.studentId.lastName}` : "Student";
+				const parentName = apt.parentId?.fullName || "Parent";
+				const summary = `Meeting: ${apt.topic || "Discussion"} (${studentName})`;
+				const description = `Parent: ${parentName}\\nStudent: ${studentName}\\nStatus: ${apt.status}`;
+
+				icsLines.push("BEGIN:VEVENT");
+				icsLines.push(`UID:${apt._id || apt.id}@magicchalk.com`);
+				icsLines.push(`DTSTAMP:${formatICSDate(new Date())}`);
+				icsLines.push(`DTSTART:${formatICSDate(start)}`);
+				icsLines.push(`DTEND:${formatICSDate(end)}`);
+				icsLines.push(`SUMMARY:${summary}`);
+				icsLines.push(`DESCRIPTION:${description}`);
+				icsLines.push("END:VEVENT");
+			} catch (err) {
+				console.error("Error formatting appointment for ICS:", err);
+			}
+		});
+
+		icsLines.push("END:VCALENDAR");
+
+		const blob = new Blob([icsLines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+		const url = window.URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.setAttribute("download", `MagicChalk_Appointments_${new Date().toISOString().split("T")[0]}.ics`);
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
 	};
 
 	const fetchRoutines = useCallback(async () => {
@@ -1339,6 +1401,8 @@ export default function TeacherDashboardPage() {
 		setCreateAssignmentError("");
 		try {
 			const statusToUse = schedulePublish && newAssignment.scheduledPublishAt ? "Scheduled" : newAssignment.status || "Draft";
+			const scheduledIso = schedulePublish ? toIsoFromLocalDateTime(newAssignment.scheduledPublishAt) : "";
+
 			const formData = new FormData();
 			formData.append("title", newAssignment.title);
 			formData.append("classGroup", newAssignment.classGroup);
@@ -1352,23 +1416,83 @@ export default function TeacherDashboardPage() {
 			}
 			(newAssignment.files || []).forEach((file) => formData.append("files", file));
 
-			const res = await fetch("/api/assignments", {
-				method: "POST",
+			const url = editingAssignmentId ? `/api/assignments/${editingAssignmentId}` : "/api/assignments";
+			const method = editingAssignmentId ? "PUT" : "POST";
+
+			const res = await fetch(url, {
+				method,
 				body: formData,
 			});
 			const data = await res.json();
 			if (!res.ok || !data?.success) {
-				throw new Error(data?.error || "Failed to create assignment");
+				throw new Error(data?.error || `Failed to ${editingAssignmentId ? "update" : "create"} assignment`);
 			}
-			setAssignments((prev) => [data.assignment, ...prev]);
-			setNewAssignment({ title: "", classGroup: newAssignment.classGroup, subject: availableSubjects[0] || "", dueDate: "", description: "", videoLink: "", scheduledPublishAt: "", status: newAssignment.status || "Draft", files: [] });
+
+			const targetId = String(editingAssignmentId);
+			if (editingAssignmentId) {
+				setAssignments((prev) => prev.map((a) => (String(a._id || a.id) === targetId ? data.assignment : a)));
+			} else {
+				setAssignments((prev) => [data.assignment, ...prev]);
+			}
+
+			setNewAssignment({ title: "", classGroup: newAssignment.classGroup, subject: availableSubjects[0] || "", dueDate: "", description: "", videoLink: "", scheduledPublishAt: "", status: "Draft", files: [] });
+			setEditingAssignmentId(null);
 			setSchedulePublish(false);
 			setFileInputKey((k) => k + 1);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : "Failed to create assignment";
+			const message = error instanceof Error ? error.message : `Failed to ${editingAssignmentId ? "update" : "create"} assignment`;
 			setCreateAssignmentError(message);
 		} finally {
 			setCreatingAssignment(false);
+		}
+	};
+
+	const handleEditAssignment = (a) => {
+		const aid = String(a._id || a.id);
+		setEditingAssignmentId(aid);
+
+		let formattedDate = "";
+		if (a.dueDate) {
+			const d = new Date(a.dueDate);
+			if (!Number.isNaN(d.getTime())) {
+				formattedDate = d.toISOString().split("T")[0];
+			}
+		}
+
+		let formattedPublish = "";
+		if (a.scheduledPublishAt) {
+			const d = new Date(a.scheduledPublishAt);
+			if (!Number.isNaN(d.getTime())) {
+				formattedPublish = d.toISOString().slice(0, 16);
+			}
+		}
+
+		setNewAssignment({
+			title: a.title || "",
+			classGroup: a.classGroup || "",
+			subject: a.subject || "",
+			dueDate: formattedDate,
+			description: a.description || "",
+			videoLink: a.videoLink || "",
+			scheduledPublishAt: formattedPublish,
+			status: a.status || "Draft",
+			files: [],
+		});
+		setSchedulePublish(!!a.scheduledPublishAt);
+		setCreateAssignmentError("");
+	};
+
+	const handleDeleteAssignment = async (id) => {
+		const sid = String(id);
+		try {
+			const res = await fetch(`/api/assignments/${sid}`, { method: "DELETE" });
+			const data = await res.json();
+			if (!res.ok || !data?.success) throw new Error(data?.error || "Failed to delete");
+			setAssignments((prev) => prev.filter((a) => String(a._id || a.id) !== sid));
+			setDeleteConfirmApt(null);
+		} catch (error) {
+			console.error("Delete error:", error);
+			alert(error.message);
 		}
 	};
 
@@ -1533,81 +1657,106 @@ export default function TeacherDashboardPage() {
 				)}
 
 				{active === "classes" && (
-					<section className="space-y-5">
+					<section className="space-y-6">
 						{teacherError && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{teacherError}</div>}
 						{loadingTeacher && <div className="text-sm text-gray-600">Loading classes...</div>}
-						<div className="rounded-xl bg-white border border-gray-100 shadow-sm p-5">
-							<div className="flex items-center justify-between mb-3">
-								<h2 className="text-lg font-semibold text-gray-900">Assigned classes</h2>
-								<span className="text-xs text-gray-500">Weekly teaching list</span>
-							</div>
-							<div className="grid gap-3 md:grid-cols-2">
-								{assignedClasses.length === 0 && !loadingTeacher && <p className="text-sm text-gray-600">No classes assigned yet.</p>}
-								{assignedClasses.map((cls) => (
-									<div key={cls.name} className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-										<div className="flex items-start justify-between">
-											<div>
-												<p className="text-sm font-semibold text-gray-900">{cls.name}</p>
-												<p className="text-xs text-gray-500">Room {cls.room}</p>
-											</div>
-											<span className={`text-[11px] px-2 py-0.5 rounded-full border ${cls.homeroom ? "bg-green-50 text-green-700 border-green-100" : "bg-gray-50 text-gray-700 border-gray-200"}`}>{cls.homeroom ? "Homeroom" : "Subject"}</span>
-										</div>
-										<p className="mt-2 text-xs text-gray-600">{cls.students} students</p>
+
+						<div className="flex flex-col lg:flex-row gap-6">
+							{/* Main Routine Area - Priority */}
+							<div className="flex-1 space-y-5">
+								<div className="flex items-center justify-between">
+									<div>
+										<h2 className="text-xl font-bold text-gray-900">Weekly Schedule</h2>
+										<p className="text-sm text-gray-500">Your planned teaching routines for the week</p>
 									</div>
-								))}
+									{routinesLoading && (
+										<div className="flex items-center gap-2 text-sm text-blue-600">
+											<div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+											Refreshing...
+										</div>
+									)}
+								</div>
+
+								{routinesError && <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm border border-red-100">{routinesError}</div>}
+
+								<div className="grid gap-4 md:grid-cols-2">
+									{!routinesLoading && routinesByDay.every((d) => d.items.length === 0) && (
+										<div className="md:col-span-2 bg-white rounded-xl border-2 border-dashed border-gray-100 p-12 text-center text-gray-500">
+											<CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-20" />
+											<p>No routines found in the official timetable.</p>
+										</div>
+									)}
+									{routinesByDay.map((day) => (
+										<div key={day.day} className="rounded-xl bg-white border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+											<div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+												<p className="text-sm font-bold text-gray-900 uppercase tracking-widest">{day.day}</p>
+												<span className="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded font-medium text-gray-400">{day.items.length} sessions</span>
+											</div>
+											<div className="p-3 space-y-2 flex-1">
+												{day.items.length === 0 && <p className="text-xs text-center py-6 text-gray-400 italic">No classes today</p>}
+												{day.items.map((item) => (
+													<div key={item._id || item.id} className="group relative flex items-center justify-between gap-3 rounded-lg bg-gray-50/50 hover:bg-white hover:shadow-md transition-all duration-200 px-4 py-3 border border-transparent hover:border-green-100">
+														<div className="absolute left-0 top-3 bottom-3 w-1 bg-green-500 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+														<div className="flex-1">
+															<p className="text-sm font-bold text-gray-900">{item.className}</p>
+															<div className="flex items-center gap-2 mt-0.5">
+																<span className="text-[11px] font-medium text-green-700 bg-green-50 px-1.5 py-0.5 rounded">{item.subject}</span>
+																{item.room && <span className="text-[11px] text-gray-400">· Room {item.room}</span>}
+															</div>
+														</div>
+														<div className="text-right">
+															<p className="text-xs font-bold text-gray-900 bg-white border border-gray-100 px-2 py-1 rounded-md shadow-sm">
+																{item.startTime}
+															</p>
+															<p className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">to {item.endTime}</p>
+														</div>
+													</div>
+												))}
+											</div>
+										</div>
+									))}
+								</div>
 							</div>
 
-							<div className="rounded-xl bg-white border border-gray-100 shadow-sm p-5">
-								<div className="flex items-center justify-between mb-3">
-									<h2 className="text-lg font-semibold text-gray-900">Subjects</h2>
-									<span className="text-xs text-gray-500">From your teacher profile</span>
+							{/* Sidebar Details - Corner Items */}
+							<div className="lg:w-72 space-y-6">
+								{/* Assigned Classes Corner Card */}
+								<div className="rounded-xl bg-white border border-gray-100 shadow-sm p-5">
+									<div className="flex items-center justify-between mb-4">
+										<h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">My Clusters</h3>
+										<UserCheck className="w-4 h-4 text-emerald-500" />
+									</div>
+									<div className="space-y-3">
+										{assignedClasses.length === 0 && !loadingTeacher && <p className="text-xs text-gray-500 italic">Finding your classes...</p>}
+										{assignedClasses.map((cls) => (
+											<div key={cls.name} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-gray-50 hover:bg-emerald-50 transition border border-transparent hover:border-emerald-100 group">
+												<div className="flex-1 min-w-0">
+													<p className="text-xs font-bold text-gray-900 truncate group-hover:text-emerald-700">{cls.name}</p>
+													<p className="text-[10px] text-gray-400">{cls.students} students</p>
+												</div>
+												{cls.homeroom && (
+													<span className="shrink-0 text-[9px] font-black uppercase bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">HR</span>
+												)}
+											</div>
+										))}
+									</div>
 								</div>
-								{teacherSubjects.length === 0 && !loadingTeacher && <p className="text-sm text-gray-600">No subjects listed.</p>}
-								{teacherSubjects.length > 0 && (
-									<div className="flex flex-wrap gap-2">
+
+								{/* Subjects Corner Card */}
+								<div className="rounded-xl bg-white border border-gray-100 shadow-sm p-5 text-center">
+									<div className="flex items-center justify-center gap-2 mb-3">
+										<GraduationCap className="w-4 h-4 text-blue-500" />
+										<h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Expertise</h3>
+									</div>
+									<div className="flex flex-wrap justify-center gap-1.5">
+										{teacherSubjects.length === 0 && !loadingTeacher && <p className="text-xs text-gray-500">Profiling...</p>}
 										{teacherSubjects.map((subj) => (
-											<span key={subj} className="text-xs font-semibold rounded-full bg-green-50 text-green-700 border border-green-100 px-3 py-1">
+											<span key={subj} className="text-[10px] font-bold rounded-lg bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 hover:bg-blue-600 hover:text-white transition duration-300">
 												{subj}
 											</span>
 										))}
 									</div>
-								)}
-							</div>
-						</div>
-
-						<div className="rounded-xl bg-white border border-gray-100 shadow-sm p-5">
-							<div className="flex items-center justify-between mb-3">
-								<h2 className="text-lg font-semibold text-gray-900">Class routines</h2>
-								<span className="text-xs text-gray-500">From admin timetables</span>
-							</div>
-							{routinesError && <div className="text-sm text-red-600 mb-2">{routinesError}</div>}
-							{routinesLoading && <p className="text-sm text-gray-600">Loading routines…</p>}
-							<div className="grid gap-3 md:grid-cols-2">
-								{!routinesLoading && routinesByDay.every((d) => d.items.length === 0) && <p className="text-sm text-gray-600">No routines yet. Check back after admin publishes the timetable.</p>}
-								{routinesByDay.map((day) => (
-									<div key={day.day} className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-										<p className="text-sm font-semibold text-gray-900 mb-2">{day.day}</p>
-										<ul className="space-y-2">
-											{day.items.length === 0 && <li className="text-xs text-gray-500">No classes scheduled.</li>}
-											{day.items.map((item) => (
-												<li key={item._id || item.id} className="flex items-start justify-between gap-3 rounded-md bg-gray-50 border border-gray-100 px-3 py-2">
-													<div>
-														<p className="text-sm font-semibold text-gray-900">{item.className}</p>
-														<p className="text-xs text-gray-500">
-															{item.subject}
-															{item.room ? ` · Room ${item.room}` : ""}
-														</p>
-													</div>
-													<div className="text-right">
-														<p className="text-sm font-semibold text-gray-900">
-															{item.startTime} – {item.endTime}
-														</p>
-													</div>
-												</li>
-											))}
-										</ul>
-									</div>
-								))}
+								</div>
 							</div>
 						</div>
 					</section>
@@ -1715,6 +1864,7 @@ export default function TeacherDashboardPage() {
 						<div className="grid gap-4 lg:grid-cols-2">
 							<div className="space-y-3">
 								<form onSubmit={handleCreateAssignment} className="rounded-lg border border-gray-100 bg-gray-50 p-4 space-y-3">
+									<h3 className="text-sm font-semibold text-gray-900">{editingAssignmentId ? "Edit Assignment" : "Add Assignment"}</h3>
 									<div className="flex flex-col gap-3 md:grid md:grid-cols-3 md:gap-4">
 										<label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-3">
 											<span className="font-semibold text-gray-900">Assignment Title</span>
@@ -1806,9 +1956,24 @@ export default function TeacherDashboardPage() {
 									</label>
 									<div className="flex items-center justify-between gap-3 flex-wrap">
 										{createAssignmentError && <span className="text-sm text-red-700">{createAssignmentError}</span>}
-										<button type="submit" disabled={creatingAssignment} className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${creatingAssignment ? "bg-gray-200 text-gray-500" : "bg-green-600 text-white hover:bg-green-700"}`}>
-											{creatingAssignment ? "Uploading..." : "Create assignment"}
-										</button>
+										<div className="flex items-center gap-2">
+											{editingAssignmentId && (
+												<button
+													type="button"
+													onClick={() => {
+														setEditingAssignmentId(null);
+														setNewAssignment({ title: "", classGroup: "", subject: availableSubjects[0] || "", dueDate: "", description: "", videoLink: "", scheduledPublishAt: "", status: "Draft", files: [] });
+														setSchedulePublish(false);
+													}}
+													className="rounded-full px-4 py-2 text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100"
+												>
+													Cancel
+												</button>
+											)}
+											<button type="submit" disabled={creatingAssignment} className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${creatingAssignment ? "bg-gray-200 text-gray-500" : "bg-green-600 text-white hover:bg-green-700"}`}>
+												{creatingAssignment ? "Saving..." : editingAssignmentId ? "Update assignment" : "Create assignment"}
+											</button>
+										</div>
 									</div>
 								</form>
 								<div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
@@ -1827,8 +1992,26 @@ export default function TeacherDashboardPage() {
 											return (
 												<div key={assignmentId} className="rounded-lg border border-gray-100 bg-white shadow-sm p-4 space-y-3">
 													<div className="flex items-start justify-between gap-3">
-														<div>
-															<p className="text-sm font-semibold text-gray-900">{assignment.title}</p>
+														<div className="flex flex-col">
+															<div className="flex items-center justify-between gap-3">
+																<p className="text-sm font-semibold text-gray-900">{assignment.title}</p>
+																<div className="flex items-center gap-2">
+																	<button
+																		onClick={() => handleEditAssignment(assignment)}
+																		className="p-1 text-gray-500 hover:text-blue-600 transition"
+																		title="Edit"
+																	>
+																		<Pencil className="w-3.5 h-3.5" />
+																	</button>
+																	<button
+																		onClick={() => setDeleteConfirmApt({ id: assignmentId, title: assignment.title })}
+																		className="p-1 text-gray-500 hover:text-red-600 transition"
+																		title="Delete"
+																	>
+																		<Trash2 className="w-3.5 h-3.5" />
+																	</button>
+																</div>
+															</div>
 															<p className="text-xs text-gray-600">
 																Class {assignment.classGroup} · {assignment.subject}
 															</p>
@@ -2408,35 +2591,49 @@ export default function TeacherDashboardPage() {
 										const dueLabel = todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : "No due date";
 										const overdue = todo.dueDate ? new Date(todo.dueDate).getTime() < Date.now() && status !== "done" : false;
 										return (
-											<div key={todo._id || todo.id} className="rounded-lg border border-gray-100 bg-gray-50 p-4 shadow-sm space-y-2">
-												<div className="flex items-start justify-between gap-2">
-													<div className="space-y-1">
-														<p className="text-sm font-semibold text-gray-900">{todo.title}</p>
-														{todo.description && <p className="text-xs text-gray-700 leading-relaxed line-clamp-2">{todo.description}</p>}
-														<div className="flex flex-wrap gap-1 text-[11px] text-gray-700">
-															<span className={`px-2 py-0.5 rounded-full border ${status === "done" ? "bg-emerald-50 border-emerald-100 text-emerald-700" : status === "in-progress" ? "bg-blue-50 border-blue-100 text-blue-700" : "bg-amber-50 border-amber-100 text-amber-700"}`}>{status === "done" ? "Done" : status === "in-progress" ? "In progress" : "Open"}</span>
-															<span className={`px-2 py-0.5 rounded-full border ${priority === "high" ? "bg-red-50 border-red-100 text-red-700" : priority === "low" ? "bg-gray-100 border-gray-200 text-gray-700" : "bg-blue-50 border-blue-100 text-blue-700"}`}>Priority: {priority}</span>
-															<span className={`px-2 py-0.5 rounded-full border ${overdue ? "bg-red-50 border-red-100 text-red-700" : "bg-gray-100 border-gray-200 text-gray-700"}`}>{dueLabel}</span>
-															{todo.classId && <span className="px-2 py-0.5 rounded-full border bg-green-50 border-green-100 text-green-700">Class</span>}
-															{Array.isArray(todo.tags) &&
-																todo.tags.length > 0 &&
-																todo.tags.map((tag) => (
-																	<span key={tag} className="px-2 py-0.5 rounded-full border bg-gray-100 border-gray-200 text-gray-700">
-																		{tag}
-																	</span>
-																))}
-														</div>
-													</div>
-													<div className="flex flex-col items-end gap-2">
-														<select value={status} onChange={(e) => handleToggleTodo(todo._id || todo.id, e.target.value)} className="rounded-full border border-gray-200 px-3 py-1 text-xs bg-white">
+											<div key={todo._id || todo.id} className="rounded-lg border border-gray-100 bg-gray-50 p-4 shadow-sm space-y-3">
+												{/* Row 1: Title and Status Dropdown */}
+												<div className="flex items-center justify-between gap-4">
+													<p className="text-sm font-semibold text-gray-900 truncate flex-1">{todo.title}</p>
+													<div className="flex items-center gap-2">
+														<select value={status} onChange={(e) => handleToggleTodo(todo._id || todo.id, e.target.value)} className="rounded-full border border-gray-200 px-3 py-1 text-xs bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500">
 															<option value="open">Open</option>
 															<option value="in-progress">In progress</option>
 															<option value="done">Done</option>
 														</select>
-														<button type="button" onClick={() => handleDeleteTodo(todo._id || todo.id)} className="text-xs text-red-700 hover:underline">
-															Delete
-														</button>
 													</div>
+												</div>
+
+												{/* Row 2: Content (Full Width) */}
+												<div className="space-y-2 w-full">
+													{todo.description && <p className="text-xs text-gray-700 leading-relaxed">{todo.description}</p>}
+
+													<div className="flex flex-col gap-1.5 text-[11px] text-gray-600">
+														<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+															<span className={`flex items-center gap-1 ${overdue ? "text-red-600 font-semibold" : ""}`}>
+																<Clock className="h-3 w-3" /> {dueLabel}
+															</span>
+															<span className={`inline-flex items-center gap-1 capitalize ${priority === "high" ? "text-red-600 font-semibold" : "text-gray-500"}`}>Priority: {priority}</span>
+															{todo.classId && (
+																<span className="text-green-700 font-semibold">
+																	Assigned: {assignedClasses.find((c) => (c.id === todo.classId || c._id === todo.classId))?.name || "Class"}
+																</span>
+															)}
+														</div>
+
+														{Array.isArray(todo.tags) && todo.tags.length > 0 && (
+															<p className="text-gray-600 italic">
+																<span className="font-semibold not-italic">Keywords:</span> {todo.tags.join(", ")}
+															</p>
+														)}
+													</div>
+												</div>
+
+												{/* Actions */}
+												<div className="flex items-center justify-end pt-2 border-t border-gray-100/50">
+													<button type="button" onClick={() => handleDeleteTodo(todo._id || todo.id)} className="text-[11px] font-medium text-red-600 hover:text-red-700 transition">
+														Delete Task
+													</button>
 												</div>
 											</div>
 										);
@@ -2511,7 +2708,7 @@ export default function TeacherDashboardPage() {
 													{assignedClasses.length === 0 && <span className="text-xs text-gray-500">No classes assigned</span>}
 													{assignedClasses.map((cls) => (
 														<span key={cls.id} className="rounded-full bg-green-50 text-green-700 border border-green-100 px-3 py-1 text-xs">
-															{cls.name}
+															{cls.name} {cls.room ? `(${cls.room})` : ""}
 														</span>
 													))}
 												</div>
@@ -2582,7 +2779,13 @@ export default function TeacherDashboardPage() {
 						<div className="flex items-center justify-between">
 							<h2 className="text-xl font-bold text-gray-900">Appointments</h2>
 							<div className="flex gap-2">
-								<button className="px-3 py-1.5 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Sync Calendar</button>
+								<button
+									onClick={handleSyncCalendar}
+									className="px-3 py-1.5 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition shadow-sm"
+								>
+									<Calendar className="w-4 h-4 text-gray-500" />
+									Save to my Calendar
+								</button>
 							</div>
 						</div>
 
@@ -2607,7 +2810,7 @@ export default function TeacherDashboardPage() {
 						{["pending", "proposed", "scheduled", "confirmed"].map(statusGroup => {
 							const groupApps = appointments.filter(a =>
 								statusGroup === "scheduled" ? (a.status === "scheduled" || a.status === "confirmed") :
-									statusGroup === "pending" ? a.status === "pending" :
+									statusGroup === "pending" ? (a.status === "pending" || a.status === "requested") :
 										a.status === statusGroup
 							);
 							if (statusGroup === "confirmed") return null; // already handled with scheduled
@@ -2625,7 +2828,7 @@ export default function TeacherDashboardPage() {
 												<div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
 													<div className="flex-1">
 														<div className="flex items-center gap-2 mb-2">
-															<span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${apt.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+															<span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${apt.status === 'pending' || apt.status === 'requested' ? 'bg-amber-100 text-amber-700' :
 																apt.status === 'confirmed' || apt.status === 'scheduled' ? 'bg-green-100 text-green-700' :
 																	apt.status === 'proposed' ? 'bg-blue-100 text-blue-700' :
 																		apt.status === 'completed' ? 'bg-gray-100 text-gray-500' :
@@ -2656,7 +2859,7 @@ export default function TeacherDashboardPage() {
 													</div>
 
 													<div className="flex items-center gap-2">
-														{apt.status === "pending" && (
+														{(apt.status === "pending" || apt.status === "requested") && (
 															<>
 																<button
 																	onClick={() => handleAppointmentStatus(apt._id || apt.id, "confirmed")}
@@ -2780,6 +2983,37 @@ export default function TeacherDashboardPage() {
 										}`}
 								>
 									{submittingAppointment ? "Processing..." : appointmentAction.type === 'reject' ? 'Reject Request' : 'Send Proposal'}
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Delete Assignment Confirmation Modal */}
+				{deleteConfirmApt && (
+					<div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+						<div className="w-full max-w-md rounded-xl bg-white shadow-xl p-6 text-center space-y-4">
+							<div className="mx-auto w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+								<Trash2 className="w-6 h-6" />
+							</div>
+							<div>
+								<h3 className="text-lg font-semibold text-gray-900">Delete Assignment?</h3>
+								<p className="text-sm text-gray-600 mt-1">
+									Are you sure you want to delete <span className="font-bold">&quot;{deleteConfirmApt.title}&quot;</span>? This action cannot be undone.
+								</p>
+							</div>
+							<div className="flex gap-3 justify-center pt-2">
+								<button
+									onClick={() => setDeleteConfirmApt(null)}
+									className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+								>
+									No, keep it
+								</button>
+								<button
+									onClick={() => handleDeleteAssignment(deleteConfirmApt.id)}
+									className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition"
+								>
+									Yes, delete
 								</button>
 							</div>
 						</div>

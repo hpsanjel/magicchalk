@@ -26,7 +26,7 @@ const AssignmentSchema = new mongoose.Schema(
 );
 
 AssignmentSchema.index({ classGroup: 1, dueDate: -1 });
-if (mongoose.models.Assignment) {
+if (process.env.NODE_ENV === "development") {
 	delete mongoose.models.Assignment;
 }
 

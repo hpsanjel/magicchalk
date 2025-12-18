@@ -132,7 +132,7 @@ export default function ParentStudentDetailsPage() {
 						<h1 className="text-2xl font-semibold text-gray-900">{student ? `${student.firstName} ${student.lastName}` : "Loading..."}</h1>
 					</div>
 					<button onClick={() => router.back()} className="text-sm font-semibold text-green-700 hover:underline">
-						Back
+						Back to Dashboard
 					</button>
 				</div>
 
@@ -204,14 +204,6 @@ export default function ParentStudentDetailsPage() {
 					</div>
 				)}
 
-				<div className="flex justify-between text-sm text-gray-600">
-					<Link href="/parents/dashboard" className="hover:underline">
-						← Back to dashboard
-					</Link>
-					<Link href="/parent/set-password" className="hover:underline">
-						Update password
-					</Link>
-				</div>
 			</div>
 		</div>
 	);

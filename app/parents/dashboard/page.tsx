@@ -19,16 +19,7 @@ import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import AppointmentModal from "./appointment-modal";
 
-const stats = [
-	{ label: "Notices", value: 4, hint: "Unread" },
-	{ label: "Meetings", value: 2, hint: "Upcoming" },
-
-];
-
-const meetings = [
-	{ id: 1, title: "Parent-teacher conference", date: "Dec 20, 2025", time: "10:30 AM", status: "Confirmed" },
-	{ id: 2, title: "Counselor check-in", date: "Jan 04, 2026", time: "2:00 PM", status: "Pending" },
-];
+// Hardcoded data moved or removed in favor of dynamic state
 
 
 
@@ -126,7 +117,7 @@ const sections = [
 	{ key: "meals", label: "School Meals" },
 	{ key: "events", label: "Events" },
 	{ key: "gallery", label: "Gallery" },
-	{ key: "meetings", label: "Meetings" },
+	{ key: "meetings", label: "Appointments" },
 ];
 
 function ParentsDashboardPageContent() {
@@ -187,7 +178,7 @@ function ParentsDashboardPageContent() {
 
 	const [loadingChildren, setLoadingChildren] = useState(false);
 	const [childrenError, setChildrenError] = useState("");
-	const [noticesData, setNoticesData] = useState<{ id: string; title: string; date: string; body: string; classGroup?: string }[]>([]);
+	const [noticesData, setNoticesData] = useState<{ id: string; title: string; date: string; body: string; image?: string; classGroup?: string }[]>([]);
 	const [noticeSearch, setNoticeSearch] = useState("");
 	const [expandedNotice, setExpandedNotice] = useState<string | null>(null);
 	const [loadingNotices, setLoadingNotices] = useState(false);
@@ -210,6 +201,7 @@ function ParentsDashboardPageContent() {
 	const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
 	const [replyBody, setReplyBody] = useState("");
 	const [creatingMessage, setCreatingMessage] = useState(false);
+	const [showNewMessageForm, setShowNewMessageForm] = useState(false);
 	const [newMessageForm, setNewMessageForm] = useState({ studentId: "", priority: "normal", topic: "", message: "" });
 
 	// Appointments
@@ -220,6 +212,33 @@ function ParentsDashboardPageContent() {
 	const [appointmentAction, setAppointmentAction] = useState<{ type: 'accept' | 'reject' | 'complete' | null, id: string | null }>({ type: null, id: null });
 	const [appointmentForm, setAppointmentForm] = useState({ reason: "" });
 	const [submittingAppointment, setSubmittingAppointment] = useState(false);
+
+	const formatResourceLabel = useCallback((r: any) => {
+		if (!r) return "Resource";
+		const raw = typeof r === "string" ? r : r.label || r.url || "";
+		if (!raw) return "Resource";
+
+		// If it's a short, specific label (not a path/URL), keep it
+		if (typeof r !== "string" && r.label && r.label.length < 40 && !r.label.includes("/") && !r.label.startsWith("http")) {
+			return r.label;
+		}
+
+		// Try to extract filename from URL or path
+		try {
+			const decoded = decodeURIComponent(raw);
+			const parts = decoded.split("/");
+			let name = parts[parts.length - 1].split("?")[0]; // remove query params
+			if (name && name.length > 0 && !name.startsWith("http")) {
+				// If it looks like a Cloudinary public ID with folders, we already have the last part
+				// If it's too long, truncate it
+				return name.length > 40 ? name.substring(0, 37) + "..." : name;
+			}
+		} catch (e) {
+			// fallback
+		}
+
+		return raw.length > 40 ? raw.substring(0, 37) + "..." : raw;
+	}, []);
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const normalizeMessageThread = useCallback((msg: any) => {
@@ -328,6 +347,7 @@ function ParentsDashboardPageContent() {
 						title: n.noticetitle,
 						date: n.noticedate,
 						body: n.notice,
+						image: n.noticeimage, // Extraction of notice image
 						classGroup: n.classGroup,
 					}));
 					setNoticesData(normalized);
@@ -541,7 +561,7 @@ function ParentsDashboardPageContent() {
 	};
 
 	useEffect(() => {
-		if (active !== "meetings") return;
+		if (active !== "meetings" && active !== "dashboard") return;
 		if (children.length === 0 && !loadingChildren) {
 			fetchChildren();
 		}
@@ -575,7 +595,7 @@ function ParentsDashboardPageContent() {
 		if (!selectedMessageId || !replyBody.trim()) return;
 		setMessagesError("");
 		try {
-			const res = await fetch(`/ api / messages / ${selectedMessageId} `, {
+			const res = await fetch(`/api/messages/${selectedMessageId}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ body: replyBody }),
@@ -628,6 +648,7 @@ function ParentsDashboardPageContent() {
 			setMessages((prev) => [normalized, ...prev]);
 			setSelectedMessageId(normalized._id || normalized.id || null);
 			setNewMessageForm((prev) => ({ studentId: prev.studentId, topic: "", priority: "normal", message: "" }));
+			setShowNewMessageForm(false);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : "Failed to send message";
 			setMessagesError(message);
@@ -697,6 +718,16 @@ function ParentsDashboardPageContent() {
 		);
 	}, [appointments, selectedStudent]);
 
+	const dashboardStats = useMemo(() => {
+		const upcomingMeetings = appointments.filter(a => a.status === 'confirmed' || a.status === 'scheduled').length;
+		const unreadNotices = noticesData.length; // Placeholder for unread logic if exists
+		return [
+			{ label: "Notices", value: unreadNotices, hint: "Total" },
+			{ label: "Meetings", value: upcomingMeetings, hint: "Upcoming" },
+			{ label: "Assignments", value: assignments.length, hint: "Current" },
+		];
+	}, [appointments, noticesData, assignments]);
+
 	return (
 		<div className="min-h-screen bg-gray-50 pt-28">
 			<header className="bg-white shadow-sm">
@@ -738,7 +769,7 @@ function ParentsDashboardPageContent() {
 						{sections.map((item) => {
 							const isActive = item.key === active;
 							return (
-								<button key={item.key} onClick={() => setActive(item.key)} className={`rounded - full px - 4 py - 2 text - sm font - medium transition - colors ${isActive ? "bg-green-600 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} `}>
+								<button key={item.key} onClick={() => setActive(item.key)} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-600 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
 									{item.label}
 								</button>
 							);
@@ -751,7 +782,7 @@ function ParentsDashboardPageContent() {
 				{active === "dashboard" && (
 					<div>
 						<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-							{stats.map((item) => (
+							{dashboardStats.map((item) => (
 								<div key={item.label} className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
 									<p className="text-sm text-gray-500">{item.label}</p>
 									<div className="mt-2 flex items-end gap-2">
@@ -783,12 +814,19 @@ function ParentsDashboardPageContent() {
 											})
 											.slice(0, 3)
 											.map((notice) => (
-												<li key={notice.id} className="px-4 py-3 flex items-start justify-between">
-													<div>
-														<p className="text-sm font-semibold text-gray-900">{notice.title}</p>
-														<p className="text-xs text-gray-500">{notice.date}</p>
+												<li key={notice.id} className="px-4 py-3 flex items-start justify-between gap-4">
+													<div className="flex gap-3 min-w-0">
+														{notice.image && (
+															<div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
+																<Image src={notice.image} alt={notice.title} fill className="object-cover" />
+															</div>
+														)}
+														<div className="min-w-0">
+															<p className="text-sm font-semibold text-gray-900 truncate">{notice.title}</p>
+															<p className="text-xs text-gray-500">{notice.date}</p>
+														</div>
 													</div>
-													<span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-1 border border-blue-100">New</span>
+													<span className="text-xs rounded-full bg-blue-50 text-blue-700 px-2 py-1 border border-blue-100 shrink-0">New</span>
 												</li>
 											))}
 									</ul>
@@ -798,22 +836,28 @@ function ParentsDashboardPageContent() {
 									<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
 										<div className="flex items-center gap-2">
 											<MessageSquare className="h-4 w-4 text-amber-600" />
-											<h2 className="text-base font-semibold text-gray-900">Meetings</h2>
+											<h2 className="text-base font-semibold text-gray-900">Appointments</h2>
 										</div>
 										<Link href="#" className="text-sm text-green-700 hover:underline">
 											Schedule
 										</Link>
 									</div>
 									<ul className="divide-y divide-gray-100">
-										{meetings.map((meeting) => (
-											<li key={meeting.id} className="px-4 py-3 flex items-center justify-between">
-												<div>
-													<p className="text-sm font-semibold text-gray-900">{meeting.title}</p>
+										{loadingAppointments && <p className="p-4 text-sm text-gray-500">Loading...</p>}
+										{!loadingAppointments && filteredAppointments.length === 0 && (
+											<p className="p-4 text-sm text-gray-500">No upcoming meetings.</p>
+										)}
+										{filteredAppointments.slice(0, 3).map((meeting) => (
+											<li key={meeting._id || meeting.id} className="px-4 py-3 flex items-center justify-between">
+												<div className="min-w-0 flex-1">
+													<p className="text-sm font-semibold text-gray-900 truncate">{meeting.topic || "Teacher Meeting"}</p>
 													<p className="text-xs text-gray-500">
-														{meeting.date} · {meeting.time}
+														{new Date(meeting.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {meeting.time}
 													</p>
 												</div>
-												<span className={`text - xs rounded - full px - 2 py - 1 border ${meeting.status === "Confirmed" ? "bg-green-50 text-green-700 border-green-100" : "bg-yellow-50 text-yellow-700 border-yellow-100"} `}>{meeting.status}</span>
+												<span className={`text-[10px] sm:text-xs rounded-full px-2 py-0.5 border shrink-0 ${meeting.status === "confirmed" || meeting.status === "scheduled" ? "bg-green-50 text-green-700 border-green-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
+													{meeting.status}
+												</span>
 											</li>
 										))}
 									</ul>
@@ -914,7 +958,7 @@ function ParentsDashboardPageContent() {
 												<p className="text-sm font-semibold text-gray-900">{child.name}</p>
 												<p className="text-xs text-gray-600">Class: {child.classGroup || "-"}</p>
 											</div>
-											<Link href={`/ parents / dashboard / students / ${child.id} `} className="text-xs font-semibold text-green-700 hover:underline">
+											<Link href={`/parents/dashboard/students/${child.id || child._id}`} className="text-xs font-semibold text-green-700 hover:underline">
 												View details
 											</Link>
 										</div>
@@ -933,13 +977,71 @@ function ParentsDashboardPageContent() {
 								<p className="text-sm text-gray-600">Chat with your child’s teacher and keep all replies in one place.</p>
 							</div>
 							<div className="flex flex-wrap gap-2">
-								<button type="button" onClick={() => fetchMessages()} className="rounded-full px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200">
-									Refresh
+								<button
+									type="button"
+									onClick={() => setShowNewMessageForm(!showNewMessageForm)}
+									className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showNewMessageForm ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-green-600 text-white hover:bg-green-700"}`}
+								>
+									{showNewMessageForm ? "Cancel" : "Send Message"}
 								</button>
+								{!showNewMessageForm && (
+									<button type="button" onClick={() => fetchMessages()} className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-transparent">
+										Refresh
+									</button>
+								)}
 							</div>
 						</div>
 
 						{messagesError && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{messagesError}</div>}
+
+						{showNewMessageForm && (
+							<div className="max-w-md mx-auto rounded-lg border border-green-100 bg-green-50/50 p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+								<div className="flex items-center justify-between mb-4">
+									<h3 className="text-base font-bold text-gray-900">Compose New Message</h3>
+									<button onClick={() => setShowNewMessageForm(false)} className="text-gray-400 hover:text-gray-600 p-1">
+										<X className="w-5 h-5" />
+									</button>
+								</div>
+								<form onSubmit={handleCreateMessage} className="space-y-4">
+									<div className="grid gap-4 md:grid-cols-3">
+										<label className="flex flex-col gap-1.5 text-sm text-gray-700 md:col-span-2">
+											<span className="font-semibold text-gray-900">Regarding Student</span>
+											<select value={newMessageForm.studentId} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, studentId: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+												{children.length === 0 && <option value="">No children found</option>}
+												{children.map((child) => (
+													<option key={child.id || child._id} value={child.id || child._id}>
+														{child.name} {child.classGroup ? `· Class ${child.classGroup}` : ""}
+													</option>
+												))}
+											</select>
+										</label>
+										<label className="flex flex-col gap-1.5 text-sm text-gray-700">
+											<span className="font-semibold text-gray-900">Urgency</span>
+											<select value={newMessageForm.priority} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, priority: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+												<option value="normal">Normal</option>
+												<option value="urgent">Urgent</option>
+											</select>
+										</label>
+									</div>
+									<label className="flex flex-col gap-1.5 text-sm text-gray-700">
+										<span className="font-semibold text-gray-900">Subject / Topic</span>
+										<input value={newMessageForm.topic} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, topic: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="Transportation, homework, attendance..." />
+									</label>
+									<label className="flex flex-col gap-1.5 text-sm text-gray-700">
+										<span className="font-semibold text-gray-900">Message Details</span>
+										<textarea value={newMessageForm.message} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, message: e.target.value }))} rows={4} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="Share your question or update clearly for the teacher" />
+									</label>
+									<div className="flex items-center justify-end gap-3 pt-2">
+										<button type="button" onClick={() => setShowNewMessageForm(false)} className="px-6 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">
+											Cancel
+										</button>
+										<button type="submit" disabled={creatingMessage} className={`rounded-full px-8 py-2 text-sm font-semibold shadow-md transition ${creatingMessage ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700 transform hover:-translate-y-0.5"}`}>
+											{creatingMessage ? "Sending..." : "Send Message"}
+										</button>
+									</div>
+								</form>
+							</div>
+						)}
 
 						<div className="grid gap-4 lg:grid-cols-3">
 							<div className="space-y-2 lg:col-span-1">
@@ -958,7 +1060,7 @@ function ParentsDashboardPageContent() {
 											const lastAt = formatDateTime(msg.lastMessageAt || lastEntry?.createdAt || msg.createdAt);
 											const isSelected = msgId === selectedMessageId;
 											return (
-												<button key={msgId} type="button" onClick={() => setSelectedMessageId(msgId)} className={`w - full text - left rounded - lg border px - 3 py - 2 transition ${isSelected ? "border-blue-200 bg-blue-50" : "border-gray-100 bg-white hover:border-blue-100"} `}>
+												<button key={msgId} type="button" onClick={() => setSelectedMessageId(msgId)} className={`w-full text-left rounded-lg border px-3 py-2 transition ${isSelected ? "border-blue-200 bg-blue-50" : "border-gray-100 bg-white hover:border-blue-100"}`}>
 													<div className="flex items-start justify-between gap-2">
 														<div className="space-y-1">
 															<p className="text-sm font-semibold text-gray-900">{`${msg.firstName || "Parent"} ${msg.lastName || ""} `.trim()}</p>
@@ -966,8 +1068,8 @@ function ParentsDashboardPageContent() {
 															<p className="text-xs text-gray-600 line-clamp-2">{snippet}</p>
 														</div>
 														<div className="flex flex-col items-end gap-1 text-right">
-															<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${msg.status === "closed" ? "bg-gray-100 text-gray-700 border-gray-200" : "bg-green-50 text-green-700 border-green-100"} `}>{msg.status === "closed" ? "Resolved" : "Open"}</span>
-															<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${msg.priority === "urgent" ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"} `}>{msg.priority === "urgent" ? "Urgent" : "Normal"}</span>
+															<span className={`text-[11px] px-2 py-0.5 rounded-full border ${msg.status === "closed" ? "bg-gray-100 text-gray-700 border-gray-200" : "bg-green-50 text-green-700 border-green-100"}`}>{msg.status === "closed" ? "Resolved" : "Open"}</span>
+															<span className={`text-[11px] px-2 py-0.5 rounded-full border ${msg.priority === "urgent" ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>{msg.priority === "urgent" ? "Urgent" : "Normal"}</span>
 															<span className="text-[11px] text-gray-500">{lastAt}</span>
 														</div>
 													</div>
@@ -993,8 +1095,8 @@ function ParentsDashboardPageContent() {
 													</p>
 												</div>
 												<div className="flex flex-wrap gap-2 items-center">
-													<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${selectedMessage.status === "closed" ? "bg-gray-100 text-gray-700 border-gray-200" : "bg-green-50 text-green-700 border-green-100"} `}>{selectedMessage.status === "closed" ? "Resolved" : "Open"}</span>
-													<span className={`text - [11px] px - 2 py - 0.5 rounded - full border ${selectedMessage.priority === "urgent" ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"} `}>{selectedMessage.priority === "urgent" ? "Urgent" : "Normal"}</span>
+													<span className={`text-[11px] px-2 py-0.5 rounded-full border ${selectedMessage.status === "closed" ? "bg-gray-100 text-gray-700 border-gray-200" : "bg-green-50 text-green-700 border-green-100"}`}>{selectedMessage.status === "closed" ? "Resolved" : "Open"}</span>
+													<span className={`text-[11px] px-2 py-0.5 rounded-full border ${selectedMessage.priority === "urgent" ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>{selectedMessage.priority === "urgent" ? "Urgent" : "Normal"}</span>
 													<span className="text-[11px] px-2 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-100">{selectedMessage.topic || "General"}</span>
 												</div>
 											</div>
@@ -1003,9 +1105,9 @@ function ParentsDashboardPageContent() {
 												{(selectedMessage.messages || []).map((msg: any, idx: number) => {
 													const fromParent = msg.senderType !== "teacher";
 													return (
-														<div key={`${msg.createdAt || idx} -${idx} `} className={`flex ${fromParent ? "justify-start" : "justify-end"} `}>
-															<div className={`max - w - [80 %] rounded - lg px - 3 py - 2 text - sm shadow - sm ${fromParent ? "bg-white border border-gray-100 text-gray-900" : "bg-blue-600 text-white"} `}>
-																<div className={`text - [11px] mb - 1 ${fromParent ? "text-gray-500" : "text-blue-100"} `}>
+														<div key={`${msg.createdAt || idx}-${idx}`} className={`flex ${fromParent ? "justify-start" : "justify-end"}`}>
+															<div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm ${fromParent ? "bg-white border border-gray-100 text-gray-900" : "bg-blue-600 text-white"}`}>
+																<div className={`text-[11px] mb-1 ${fromParent ? "text-gray-500" : "text-blue-100"}`}>
 																	{fromParent ? msg.senderName || "You" : "Teacher"} · {formatDateTime(msg.createdAt || selectedMessage.createdAt)}
 																</div>
 																<p className="whitespace-pre-line leading-relaxed">{msg.body}</p>
@@ -1019,7 +1121,7 @@ function ParentsDashboardPageContent() {
 												<label className="text-sm text-gray-700 font-semibold">Reply to teacher</label>
 												<textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={3} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" placeholder="Type your reply" />
 												<div className="flex flex-wrap gap-2 items-center">
-													<button type="button" onClick={handleSendReply} disabled={!replyBody.trim()} className={`rounded - full px - 4 py - 2 text - sm font - semibold ${!replyBody.trim() ? "bg-gray-200 text-gray-500" : "bg-blue-600 text-white hover:bg-blue-700"} `}>
+													<button type="button" onClick={handleSendReply} disabled={!replyBody.trim()} className={`rounded-full px-4 py-2 text-sm font-semibold ${!replyBody.trim() ? "bg-gray-200 text-gray-500" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
 														Send reply
 													</button>
 												</div>
@@ -1028,49 +1130,6 @@ function ParentsDashboardPageContent() {
 									) : (
 										<p className="text-sm text-gray-600">Select a conversation to view messages.</p>
 									)}
-								</div>
-
-								<div className="rounded-lg border border-gray-100 bg-white shadow-sm p-4">
-									<h3 className="text-sm font-semibold text-gray-900 mb-2">Start a new message</h3>
-									<form onSubmit={handleCreateMessage} className="space-y-3">
-										<div className="grid gap-3 md:grid-cols-3">
-											<label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2">
-												<span className="font-semibold text-gray-900">Select child</span>
-												<select value={newMessageForm.studentId} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, studentId: e.target.value }))} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
-													{children.length === 0 && <option value="">No children found</option>}
-													{children.map((child) => {
-														const childId = (child as any).id || (child as any)._id;
-														return (
-															<option key={childId} value={childId}>
-																{child.name} {child.classGroup ? `· Class ${child.classGroup} ` : ""}
-															</option>
-														);
-													})}
-												</select>
-											</label>
-											<label className="flex flex-col gap-1 text-sm text-gray-700">
-												<span className="font-semibold text-gray-900">Priority</span>
-												<select value={newMessageForm.priority} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, priority: e.target.value }))} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
-													<option value="normal">Normal</option>
-													<option value="urgent">Urgent</option>
-												</select>
-											</label>
-										</div>
-										<label className="flex flex-col gap-1 text-sm text-gray-700">
-											<span className="font-semibold text-gray-900">Topic (optional)</span>
-											<input value={newMessageForm.topic} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, topic: e.target.value }))} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" placeholder="Transportation, homework, attendance..." />
-										</label>
-										<label className="flex flex-col gap-1 text-sm text-gray-700">
-											<span className="font-semibold text-gray-900">Message</span>
-											<textarea value={newMessageForm.message} onChange={(e) => setNewMessageForm((prev) => ({ ...prev, message: e.target.value }))} rows={4} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" placeholder="Share your question or update" />
-										</label>
-										<div className="flex items-center justify-between gap-3 flex-wrap">
-											{messagesError && <span className="text-sm text-red-700">{messagesError}</span>}
-											<button type="submit" disabled={creatingMessage} className={`rounded - full px - 4 py - 2 text - sm font - semibold ${creatingMessage ? "bg-gray-200 text-gray-500" : "bg-green-600 text-white hover:bg-green-700"} `}>
-												{creatingMessage ? "Sending..." : "Send to teacher"}
-											</button>
-										</div>
-									</form>
 								</div>
 							</div>
 						</div>
@@ -1112,12 +1171,17 @@ function ParentsDashboardPageContent() {
 														<span className="ml-2 text-xs text-gray-500">{notice.date}</span>
 														{notice.classGroup && <span className="ml-2 text-xs rounded-full bg-gray-100 px-2 py-0.5 text-gray-600 border border-gray-200">{notice.classGroup}</span>}
 													</div>
-													<span className={`ml - 2 transition - transform ${isExpanded ? "rotate-90" : "rotate-0"} `}>
+													<span className={`ml-2 transition-transform ${isExpanded ? "rotate-90" : "rotate-0"}`}>
 														<ChevronRight className="w-4 h-4 text-gray-400" />
 													</span>
 												</button>
-												<div className={`mt - 2 pl - 1 pr - 2 text - gray - 700 text - sm transition - all duration - 200 ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"} `} style={{ willChange: "max-height, opacity" }}>
-													{notice.body}
+												<div className={`mt-2 pl-1 pr-2 space-y-3 transition-all duration-200 ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`} style={{ willChange: "max-height, opacity" }}>
+													{notice.image && (
+														<div className="relative aspect-video w-full overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-sm">
+															<Image src={notice.image} alt={notice.title} fill className="object-cover" />
+														</div>
+													)}
+													<p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{notice.body}</p>
 												</div>
 											</li>
 										);
@@ -1148,7 +1212,7 @@ function ParentsDashboardPageContent() {
 												setActiveGalleryFilter(filter);
 												setGalleryPage(1);
 											}}
-											className={`rounded - full px - 3 py - 1 text - xs font - semibold transition ${isActive ? "bg-green-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} `}
+											className={`rounded-full px-3 py-1 text-xs font-semibold transition ${isActive ? "bg-green-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
 										>
 											{filter}
 										</button>
@@ -1173,7 +1237,7 @@ function ParentsDashboardPageContent() {
 														src="/images/gallery/classroom.jpg"
 														alt="Gallery Preview"
 														fill
-														className="object-cover transition - transform duration - 500 group - hover: scale - 110"
+														className="object-cover transition-transform duration-500 group-hover:scale-110"
 													/>
 												</div>
 												<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition" />
@@ -1290,11 +1354,7 @@ function ParentsDashboardPageContent() {
 									.filter((event) => {
 										if (!event.classLabel) return true; // Show to all if no class specified
 										if (allowedClassLabels.size === 0) return true; // Show all if no children (or logic specific) - actually provided logic implies show based on children.
-										// If we have allowedClassLabels, we strictly filter?
-										// The original logic for gallery was:
-										// if (!item.classLabel) return true;
-										// if (allowedClassLabels.size === 0) return false; (but here we might want to be lenient or strict)
-										// Let's stick to: if classLabel exists, it MUST match one of the allowed labels.
+										// If we have allowedClassLabels, it MUST match one of the allowed labels.
 										return allowedClassLabels.has(event.classLabel.toString().trim().toLowerCase());
 									})
 									.map((event) => {
@@ -1342,7 +1402,7 @@ function ParentsDashboardPageContent() {
 										return allowedClassLabels.has(a.classGroup.toString().trim().toLowerCase());
 									})
 									.map((a, idx) => (
-										<li key={a._id} className={`p - 4 flex flex - col md: flex - row md: items - center md: justify - between gap - 2 ${idx % 2 === 0 ? "bg-gray-50" : "bg-gray-100"} `}>
+										<li key={a._id} className={`p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 ${idx % 2 === 0 ? "bg-gray-50" : "bg-gray-100"}`}>
 											<div>
 												<p className="text-base font-semibold text-gray-900">{a.title || a.assignmentTitle || "Untitled Assignment"}</p>
 												{a.classGroup && <span className="text-xs text-gray-500 mr-2">Class: {a.classGroup}</span>}
@@ -1371,10 +1431,10 @@ function ParentsDashboardPageContent() {
 															<li key={idx}>
 																{r.url ? (
 																	<a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">
-																		{r.label || r.url}
+																		{formatResourceLabel(r)}
 																	</a>
 																) : (
-																	r.label || r
+																	formatResourceLabel(r)
 																)}
 															</li>
 														))}
@@ -1385,14 +1445,14 @@ function ParentsDashboardPageContent() {
 											{a.resource && (
 												<div className="mt-2">
 													<a href={a.resource} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">
-														{a.resourceLabel || a.resource}
+														{formatResourceLabel({ label: a.resourceLabel, url: a.resource })}
 													</a>
 												</div>
 											)}
 											{/* Attachment */}
 											{a.attachment && (
 												<a href={a.attachment} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">
-													Download
+													{formatResourceLabel(a.attachment)}
 												</a>
 											)}
 										</li>
@@ -1427,11 +1487,11 @@ function ParentsDashboardPageContent() {
 												<div className="flex items-center gap-2 mb-1">
 													<span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${apt.status === "confirmed" || apt.status === "scheduled" ? "bg-green-50 text-green-700 border-green-200" :
 														apt.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
-															apt.status === "proposed" ? "bg-amber-50 text-amber-700 border-amber-200" :
+															apt.status === "proposed" || apt.status === "requested" || apt.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
 																apt.status === "completed" ? "bg-blue-50 text-blue-700 border-blue-200" :
 																	"bg-gray-100 text-gray-700 border-gray-200"
 														} `}>
-														{apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+														{apt.status === "requested" ? "Requested" : apt.status === "pending" ? "Pending Approval" : apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
 													</span>
 													<span className="text-xs text-gray-500">
 														{new Date(apt.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {apt.time}
@@ -1539,7 +1599,7 @@ function ParentsDashboardPageContent() {
 				index={lightboxIndex}
 				slides={galleryMedia.map(item => ({ src: item.url, alt: item.alt }))}
 			/>
-		</div>
+		</div >
 	);
 }
 
