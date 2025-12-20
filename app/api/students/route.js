@@ -158,16 +158,63 @@ export async function PUT(request) {
 			transportRoute: student.transportRoute || "",
 			pickupPerson: student.pickupPerson || "",
 			emergencyContact: student.emergencyContact,
+			photoUrl: student.photoUrl || "",
 		};
+		// Allow status update if present in payload
+		if (typeof student.status === "string") {
+			update.status = student.status;
+		}
 
 		const query = { _id: id };
 		if (auth?.role === "parent") {
 			query.guardianEmail = auth.email;
 		}
 
+		// Get previous student for status check
+		const prevStudent = await Student.findOne(query);
 		const updated = await Student.findOneAndUpdate(query, update, { new: true });
 		if (!updated) {
 			return NextResponse.json({ success: false, error: "Student not found" }, { status: 404 });
+		}
+
+		// If status changed from pending to active, send welcome email and create parent user
+		if (prevStudent && prevStudent.status === "pending" && update.status === "active" && updated.guardianEmail) {
+			// 1. Send welcome email with password set link
+			const passwordSetBase = process.env.NEXT_PUBLIC_BASE_URL + "/parent/set-password";
+			const passwordSetUrl = `${passwordSetBase}?email=${encodeURIComponent(updated.guardianEmail)}`;
+			try {
+				await sendParentWelcomeEmail(updated.guardianEmail, {
+					guardianName: updated.guardianName,
+					studentName: `${updated.firstName} ${updated.lastName}`.trim() || "your child",
+					classGroup: updated.classGroup,
+					username: updated.guardianEmail,
+					passwordSetUrl,
+				});
+			} catch (err) {
+				console.error("Failed to send parent welcome email:", err);
+			}
+			// 2. Create parent user if not exists
+			try {
+				await connectDB(); // Ensure DB connection before model import
+				const User = (await import("@/models/User.Model")).default;
+				const existing = await User.findOne({ email: updated.guardianEmail });
+				console.log("Parent user existence check:", existing);
+				if (!existing) {
+					const userData = {
+						fullName: updated.guardianName,
+						email: updated.guardianEmail,
+						userName: updated.guardianEmail, // Ensure correct field name
+						password: "", // Password will be set by parent via link
+						role: "parent",
+						phone: updated.guardianPhone,
+					};
+					console.log("Creating parent user with data:", userData);
+					const createdUser = await User.create(userData);
+					console.log("Parent user created:", createdUser);
+				}
+			} catch (err) {
+				console.error("Failed to create parent user:", err);
+			}
 		}
 
 		return NextResponse.json({ success: true, student: updated }, { status: 200 });

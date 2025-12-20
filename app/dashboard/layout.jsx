@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveMenu } from "@/context/ActiveMenuContext";
 import { Toaster } from "@/components/ui/toaster";
-import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, ArrowBigLeft, Book, Newspaper, Timer, File, User, LogOut, ChevronDown, CalendarClock } from "lucide-react";
+import { BookImage, MessageCircle, Mail, Settings, GalleryThumbnails, LayoutDashboard, Home, ArrowBigLeft, Book, Newspaper, Timer, User, LogOut, ChevronDown, CalendarClock } from "lucide-react";
 
 const menuItems = [
 	{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,7 +16,6 @@ const menuItems = [
 	{ id: "routines", label: "Class Routines", icon: CalendarClock },
 	{ id: "contactmessages", label: "Contact Messages", icon: Book },
 	{ id: "appointments", label: "Appointments", icon: Timer },
-	{ id: "admissions", label: "Admissions", icon: File },
 	{ id: "events", label: "Events", icon: BookImage },
 	{ id: "blogs", label: "Blogs", icon: Newspaper },
 	{ id: "testimonials", label: "Testimonials", icon: MessageCircle },

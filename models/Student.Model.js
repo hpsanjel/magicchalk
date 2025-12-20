@@ -19,10 +19,16 @@ const StudentSchema = new mongoose.Schema(
 		classGroup: { type: String, required: true },
 		enrollmentDate: { type: Date, required: true },
 		allergies: { type: String, default: "" },
-		medicalNotes: { type: String, default: "" },
+		medicalNotes: { type: String, default: "" }, // allergies/medical info only
+		photoUrl: { type: String, default: "" },
 		transportRoute: { type: String, default: "" },
 		pickupPerson: { type: String, default: "" },
 		emergencyContact: { type: String, required: true },
+		status: {
+			type: String,
+			default: "pending",
+			enum: ["active", "pending", "rejected"],
+		},
 	},
 	{ timestamps: true }
 );

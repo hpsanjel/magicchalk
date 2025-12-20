@@ -64,19 +64,24 @@ export default function EmployeeForm({ settingdata }) {
 		setMessage("");
 
 		try {
-			const url = `/api/settings/${formData._id}`;
+			let url = "/api/settings";
+			let method = "POST";
+			if (formData._id) {
+				url = `/api/settings/${formData._id}`;
+				method = "PUT";
+			}
 			const response = await fetch(url, {
-				method: "PUT",
+				method,
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(formData),
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to update settings");
+				throw new Error(method === "POST" ? "Failed to create settings" : "Failed to update settings");
 			}
 
-			toast.success("Profile updated successfully");
-			setMessage("Profile updated successfully");
+			toast.success(method === "POST" ? "Profile created successfully" : "Profile updated successfully");
+			setMessage(method === "POST" ? "Profile created successfully" : "Profile updated successfully");
 		} catch (err) {
 			toast.error("Profile not updated. Please try again.");
 			setError(err.message);

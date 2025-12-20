@@ -61,13 +61,10 @@ export default function EventsPage() {
 						<TableRow>
 							<TableHead>Event Name</TableHead>
 							<TableHead>Event Description</TableHead>
-							<TableHead>Event Country</TableHead>
 							<TableHead>Event Venue</TableHead>
 							<TableHead>Event Date</TableHead>
 							<TableHead>Event Time</TableHead>
-							<TableHead>Event Price</TableHead>
-							{/* <TableHead>Spotify URL</TableHead>
-							<TableHead>Youtube URL</TableHead> */}
+
 							<TableHead>Poster</TableHead>
 							<TableHead>Actions</TableHead>
 						</TableRow>
@@ -78,13 +75,10 @@ export default function EventsPage() {
 								<TableRow key={event._id}>
 									<TableCell className="font-semibold max-w-96">{event.eventname}</TableCell>
 									<TableCell className="max-w-96">{event.eventdescription}</TableCell>
-									<TableCell>{event.eventcountry}</TableCell>
 									<TableCell>{event.eventvenue}</TableCell>
 									<TableCell className="w-24">{event.eventdate}</TableCell>
 									<TableCell className="w-28">{event.eventtime}</TableCell>
-									<TableCell className="w-24">{event.eventprice}</TableCell>
-									{/* <TableCell className="w-24">{event.eventspotifyUrl}</TableCell>
-									<TableCell className="w-24">{event.eventyoutubeUrl}</TableCell> */}
+
 									<TableCell>
 										<Image src={event.eventposterUrl || "/placeholder.jpg"} width={200} height={200} alt={event.eventname || "alt"} className="w-24 h-32 object-cover" />
 									</TableCell>

@@ -30,22 +30,11 @@ export async function POST(request) {
 
 		const formData = await request.formData();
 		console.log("Received form data", formData);
-
 		const eventname = formData.get("eventname");
 		const eventdescription = formData.get("eventdescription");
-		const eventcountry = formData.get("eventcountry");
 		const eventvenue = formData.get("eventvenue");
 		const eventdate = formData.get("eventdate");
-		const earlyBirdPrice = formData.get("earlyBirdPrice");
-		const vipPrice = formData.get("vipPrice");
-		const standardPrice = formData.get("standardPrice");
-		const frontRowPrice = formData.get("frontRowPrice");
-		const backRowPrice = formData.get("backRowPrice");
-		const preSalePrice = formData.get("preSalePrice");
-		const doorSalePrice = formData.get("doorSalePrice");
 		const eventtime = formData.get("eventtime");
-		const eventspotifyUrl = formData.get("eventspotifyUrl");
-		const eventyoutubeUrl = formData.get("eventyoutubeUrl");
 		const classId = formData.get("classId");
 		const classLabel = formData.get("classLabel");
 		const eventposter = formData.get("eventposter");
@@ -58,7 +47,7 @@ export async function POST(request) {
 		const eventvideo = formData.get("eventvideo");
 
 		// Validate input
-		if (!eventname || !eventcountry || !eventposter) {
+		if (!eventname || !eventposter) {
 			return NextResponse.json({ success: false, error: "Required fields are missing" }, { status: 400 });
 		}
 		if (role === "teacher" && !classLabel && !classId) {
@@ -79,22 +68,12 @@ export async function POST(request) {
 		const event = await Event.create({
 			eventname,
 			eventdescription,
-			eventcountry,
 			eventvenue,
 			eventdate: formattedDate,
-			earlyBirdPrice,
-			vipPrice,
-			standardPrice,
-			frontRowPrice,
-			backRowPrice,
-			preSalePrice,
-			doorSalePrice,
+			eventtime,
 			classId: classId || null,
 			classLabel: classLabel || "",
 			createdBy: creatorEmail,
-			eventtime,
-			eventspotifyUrl,
-			eventyoutubeUrl,
 			eventposterUrl,
 			eventposter2Url,
 			eventposter3Url,

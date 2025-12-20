@@ -23,6 +23,37 @@ export async function middleware(req) {
 		const secretKey = new TextEncoder().encode(JWT_SECRET);
 		const { payload } = await jwtVerify(token, secretKey);
 
+		// Role-based access control
+		const url = req.nextUrl;
+		const pathname = url.pathname;
+		const role = payload.role;
+
+		// Admin dashboard
+		if (pathname.startsWith("/dashboard")) {
+			if (role !== "admin") {
+				// Redirect to correct dashboard
+				if (role === "teacher") return NextResponse.redirect(new URL("/teachers/dashboard", req.url));
+				if (role === "parent") return NextResponse.redirect(new URL("/parents/dashboard", req.url));
+				return NextResponse.redirect(new URL("/user", req.url));
+			}
+		}
+		// Teacher dashboard
+		if (pathname.startsWith("/teachers/dashboard")) {
+			if (role !== "teacher") {
+				if (role === "admin") return NextResponse.redirect(new URL("/dashboard", req.url));
+				if (role === "parent") return NextResponse.redirect(new URL("/parents/dashboard", req.url));
+				return NextResponse.redirect(new URL("/user", req.url));
+			}
+		}
+		// Parent dashboard
+		if (pathname.startsWith("/parents/dashboard")) {
+			if (role !== "parent") {
+				if (role === "admin") return NextResponse.redirect(new URL("/dashboard", req.url));
+				if (role === "teacher") return NextResponse.redirect(new URL("/teachers/dashboard", req.url));
+				return NextResponse.redirect(new URL("/user", req.url));
+			}
+		}
+
 		// Optionally, pass user info downstream
 		const response = NextResponse.next();
 		response.headers.set("x-user", JSON.stringify(payload));
@@ -34,5 +65,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-	matcher: ["/dashboard/:path*"],
+	matcher: ["/dashboard/:path*", "/teachers/dashboard/:path*", "/parents/dashboard/:path*"],
 };

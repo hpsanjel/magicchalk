@@ -45,8 +45,8 @@ export default function EventsAndNoticesPage() {
 		return (
 			<div className="bg-gradient-to-b from-yellow-50 via-white to-yellow-50 min-h-screen pt-24 md:pt-32">
 				<div className="container max-w-7xl mx-auto px-4 py-8">
-				{/* Back Button */}
-				<button onClick={() => setSelectedEvent(null)} className="flex items-center text-yellow-600 hover:text-yellow-700 font-medium transition-colors duration-300 mb-6">
+					{/* Back Button */}
+					<button onClick={() => setSelectedEvent(null)} className="flex items-center text-yellow-600 hover:text-yellow-700 font-medium transition-colors duration-300 mb-6">
 						<svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
 						</svg>
@@ -55,22 +55,21 @@ export default function EventsAndNoticesPage() {
 
 					<div className="grid lg:grid-cols-3 gap-8">
 						<div className="lg:col-span-2">
-					<Card className="shadow-2xl border-none bg-white overflow-hidden">
-						<div className="bg-gradient-to-r from-yellow-400 to-green-500 h-2" />						{/* Event Image */}
-						<div className="relative h-96 bg-gradient-to-br from-yellow-100 to-green-100">
+							<Card className="shadow-2xl border-none bg-white overflow-hidden">
+								<div className="bg-gradient-to-r from-yellow-400 to-green-500 h-2" /> {/* Event Image */}
+								<div className="relative h-96 bg-gradient-to-br from-yellow-100 to-green-100">
 									{selectedEvent.eventposterUrl ? (
 										<Image src={selectedEvent.eventposterUrl} alt={selectedEvent.eventname} fill className="object-cover" />
 									) : (
-								<div className="flex items-center justify-center h-full">
-									<Calendar className="w-32 h-32 text-yellow-300" />
+										<div className="flex items-center justify-center h-full">
+											<Calendar className="w-32 h-32 text-yellow-300" />
 										</div>
 									)}
 								</div>
-
 								<CardContent className="p-8">
 									{/* Date Badge */}
-							<div className="flex items-start gap-6 mb-6">
-								<div className="bg-gradient-to-br from-yellow-400 to-green-500 text-white rounded-xl p-4 shadow-lg min-w-[100px] text-center">
+									<div className="flex items-start gap-6 mb-6">
+										<div className="bg-gradient-to-br from-yellow-400 to-green-500 text-white rounded-xl p-4 shadow-lg min-w-[100px] text-center">
 											<div className="text-4xl font-bold">{day}</div>
 											<div className="text-sm uppercase tracking-wider">{month}</div>
 										</div>
@@ -100,14 +99,8 @@ export default function EventsAndNoticesPage() {
 										</div>
 									)}
 
-							{/* Event Details Grid */}
-							<div className="grid md:grid-cols-2 gap-6 mt-8 p-6 bg-yellow-50 rounded-lg">
-										{selectedEvent.eventcountry && (
-											<div>
-												<h3 className="text-sm font-semibold text-gray-500 mb-1">Location</h3>
-												<p className="text-gray-800">{selectedEvent.eventcountry}</p>
-											</div>
-										)}
+									{/* Event Details Grid */}
+									<div className="grid md:grid-cols-2 gap-6 mt-8 p-6 bg-yellow-50 rounded-lg">
 										{selectedEvent.eventvenue && (
 											<div>
 												<h3 className="text-sm font-semibold text-gray-500 mb-1">Venue</h3>
@@ -126,23 +119,26 @@ export default function EventsAndNoticesPage() {
 								Other Events
 							</h3>
 							<div className="space-y-4">
-								{sortedEvents.filter(e => e._id !== selectedEvent._id).slice(0, 3).map((event) => {
-									const { day, month } = formatEventDate(event.eventdate);
-									return (
-								<Card key={event._id} className="cursor-pointer hover:shadow-lg transition-all duration-300" onClick={() => setSelectedEvent(event)}>
-									<CardContent className="p-4 flex gap-4">
-										<div className="bg-yellow-500 text-white rounded-lg p-3 text-center min-w-[60px]">
-													<div className="text-2xl font-bold">{day}</div>
-													<div className="text-xs uppercase">{month}</div>
-												</div>
-												<div>
-													<h4 className="font-bold text-gray-800 line-clamp-2">{event.eventname}</h4>
-													<p className="text-sm text-gray-600">{event.eventvenue}</p>
-												</div>
-											</CardContent>
-										</Card>
-									);
-								})}
+								{sortedEvents
+									.filter((e) => e._id !== selectedEvent._id)
+									.slice(0, 3)
+									.map((event) => {
+										const { day, month } = formatEventDate(event.eventdate);
+										return (
+											<Card key={event._id} className="cursor-pointer hover:shadow-lg transition-all duration-300" onClick={() => setSelectedEvent(event)}>
+												<CardContent className="p-4 flex gap-4">
+													<div className="bg-yellow-500 text-white rounded-lg p-3 text-center min-w-[60px]">
+														<div className="text-2xl font-bold">{day}</div>
+														<div className="text-xs uppercase">{month}</div>
+													</div>
+													<div>
+														<h4 className="font-bold text-gray-800 line-clamp-2">{event.eventname}</h4>
+														<p className="text-sm text-gray-600">{event.eventvenue}</p>
+													</div>
+												</CardContent>
+											</Card>
+										);
+									})}
 							</div>
 						</div>
 					</div>
@@ -168,7 +164,7 @@ export default function EventsAndNoticesPage() {
 						<div className="lg:col-span-2">
 							<Card className="shadow-2xl border-none bg-white overflow-hidden">
 								<div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2" />
-								
+
 								{/* Notice Image */}
 								<div className="relative h-96 bg-gradient-to-br from-green-100 to-emerald-100">
 									{selectedNotice.noticeimage ? (
@@ -202,19 +198,22 @@ export default function EventsAndNoticesPage() {
 								Other Notices
 							</h3>
 							<div className="space-y-4">
-								{sortedNotices.filter(n => n._id !== selectedNotice._id).slice(0, 3).map((notice) => (
-									<Card key={notice._id} className="cursor-pointer hover:shadow-lg transition-all duration-300" onClick={() => setSelectedNotice(notice)}>
-										<div className="bg-green-500 h-1" />
-										<CardContent className="p-4">
-											<div className="flex items-center gap-2 mb-2">
-												<Calendar className="w-4 h-4 text-green-500" />
-												<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
-											</div>
-											<h4 className="font-bold text-gray-800 line-clamp-2 mb-2">{notice.noticetitle}</h4>
-											<p className="text-gray-600 text-sm line-clamp-2">{notice.notice}</p>
-										</CardContent>
-									</Card>
-								))}
+								{sortedNotices
+									.filter((n) => n._id !== selectedNotice._id)
+									.slice(0, 3)
+									.map((notice) => (
+										<Card key={notice._id} className="cursor-pointer hover:shadow-lg transition-all duration-300" onClick={() => setSelectedNotice(notice)}>
+											<div className="bg-green-500 h-1" />
+											<CardContent className="p-4">
+												<div className="flex items-center gap-2 mb-2">
+													<Calendar className="w-4 h-4 text-green-500" />
+													<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
+												</div>
+												<h4 className="font-bold text-gray-800 line-clamp-2 mb-2">{notice.noticetitle}</h4>
+												<p className="text-gray-600 text-sm line-clamp-2">{notice.notice}</p>
+											</CardContent>
+										</Card>
+									))}
 							</div>
 						</div>
 					</div>
@@ -229,37 +228,21 @@ export default function EventsAndNoticesPage() {
 			<div className="container max-w-7xl mx-auto px-4 py-16">
 				{/* Header */}
 				<div className="text-center mb-12">
-				<h1 className="text-5xl font-bold mb-4">
-					School <span className="text-green-600">Life</span>
-				</h1>
-				<div className="w-24 h-1 bg-gradient-to-r from-yellow-400 to-green-500 mx-auto mb-6 rounded-full"></div>
-					<p className="text-gray-600 max-w-3xl mx-auto text-lg">
-						Stay connected with our vibrant school community. Explore upcoming events and important announcements.
-					</p>
+					<h1 className="text-5xl font-bold mb-4">
+						School <span className="text-green-600">Life</span>
+					</h1>
+					<div className="w-24 h-1 bg-gradient-to-r from-yellow-400 to-green-500 mx-auto mb-6 rounded-full"></div>
+					<p className="text-gray-600 max-w-3xl mx-auto text-lg">Stay connected with our vibrant school community. Explore upcoming events and important announcements.</p>
 				</div>
 
 				{/* Tabs */}
 				<div className="flex justify-center mb-12">
 					<div className="inline-flex rounded-lg bg-gray-100 p-1">
-					<button
-						onClick={() => setActiveTab("events")}
-						className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${
-							activeTab === "events"
-								? "bg-gradient-to-r from-yellow-400 to-green-500 text-white shadow-lg"
-								: "text-gray-600 hover:text-gray-800"
-						}`}
-						>
+						<button onClick={() => setActiveTab("events")} className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${activeTab === "events" ? "bg-gradient-to-r from-yellow-400 to-green-500 text-white shadow-lg" : "text-gray-600 hover:text-gray-800"}`}>
 							<Calendar className="w-5 h-5 inline mr-2" />
 							Events
 						</button>
-						<button
-							onClick={() => setActiveTab("notices")}
-							className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${
-								activeTab === "notices"
-									? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg"
-									: "text-gray-600 hover:text-gray-800"
-							}`}
-						>
+						<button onClick={() => setActiveTab("notices")} className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${activeTab === "notices" ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg" : "text-gray-600 hover:text-gray-800"}`}>
 							<Bell className="w-5 h-5 inline mr-2" />
 							Notices
 						</button>
@@ -274,60 +257,49 @@ export default function EventsAndNoticesPage() {
 								{sortedEvents.map((event) => {
 									const { day, month } = formatEventDate(event.eventdate);
 									return (
-										<Card
-											key={event._id}
-											className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden border-none"
-									onClick={() => setSelectedEvent(event)}
-								>
-									<div className="bg-gradient-to-r from-yellow-400 to-green-500 h-1" />									{/* Event Image */}
-									<div className="relative h-48 bg-gradient-to-br from-yellow-100 to-green-100 overflow-hidden">
+										<Card key={event._id} className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden border-none" onClick={() => setSelectedEvent(event)}>
+											<div className="bg-gradient-to-r from-yellow-400 to-green-500 h-1" /> {/* Event Image */}
+											<div className="relative h-48 bg-gradient-to-br from-yellow-100 to-green-100 overflow-hidden">
 												{event.eventposterUrl ? (
 													<Image src={event.eventposterUrl} alt={event.eventname} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
 												) : (
-											<div className="flex items-center justify-center h-full">
-												<Calendar className="w-20 h-20 text-yellow-300" />
+													<div className="flex items-center justify-center h-full">
+														<Calendar className="w-20 h-20 text-yellow-300" />
 													</div>
 												)}
 											</div>
-
 											<CardContent className="p-6">
-										{/* Date Badge */}
-										<div className="flex items-start gap-4 mb-4">
-											<div className="bg-gradient-to-br from-yellow-400 to-green-500 text-white rounded-lg p-3 shadow-lg text-center min-w-[70px]">
+												{/* Date Badge */}
+												<div className="flex items-start gap-4 mb-4">
+													<div className="bg-gradient-to-br from-yellow-400 to-green-500 text-white rounded-lg p-3 shadow-lg text-center min-w-[70px]">
 														<div className="text-3xl font-bold">{day}</div>
 														<div className="text-xs uppercase tracking-wider">{month}</div>
 													</div>
-											<div className="flex-1">
-												<h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
-															{event.eventname}
-														</h3>
+													<div className="flex-1">
+														<h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">{event.eventname}</h3>
 													</div>
 												</div>
 
 												{/* Event Details */}
 												<div className="space-y-2 text-sm text-gray-600">
-											{event.eventtime && (
-												<div className="flex items-center gap-2">
-													<Clock className="w-4 h-4 text-yellow-600" />
+													{event.eventtime && (
+														<div className="flex items-center gap-2">
+															<Clock className="w-4 h-4 text-yellow-600" />
 															<span>{event.eventtime}</span>
 														</div>
 													)}
-											{event.eventvenue && (
-												<div className="flex items-center gap-2">
-													<MapPin className="w-4 h-4 text-green-600" />
+													{event.eventvenue && (
+														<div className="flex items-center gap-2">
+															<MapPin className="w-4 h-4 text-green-600" />
 															<span className="line-clamp-1">{event.eventvenue}</span>
 														</div>
 													)}
 												</div>
 
-												{event.eventdescription && (
-													<p className="text-gray-600 mt-4 line-clamp-3 text-sm leading-relaxed">
-														{event.eventdescription}
-													</p>
-												)}
+												{event.eventdescription && <p className="text-gray-600 mt-4 line-clamp-3 text-sm leading-relaxed">{event.eventdescription}</p>}
 
-										<div className="mt-6 pt-4 border-t border-gray-100">
-											<span className="text-green-600 font-medium text-sm group-hover:text-green-700 inline-flex items-center">
+												<div className="mt-6 pt-4 border-t border-gray-100">
+													<span className="text-green-600 font-medium text-sm group-hover:text-green-700 inline-flex items-center">
 														Learn more
 														<svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -355,13 +327,9 @@ export default function EventsAndNoticesPage() {
 						{sortedNotices && sortedNotices.length > 0 ? (
 							<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 								{sortedNotices.map((notice) => (
-									<Card
-										key={notice._id}
-										className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden border-none"
-										onClick={() => setSelectedNotice(notice)}
-									>
+									<Card key={notice._id} className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden border-none" onClick={() => setSelectedNotice(notice)}>
 										<div className="bg-gradient-to-r from-green-500 to-emerald-500 h-1" />
-										
+
 										{/* Notice Image */}
 										<div className="relative h-48 bg-gradient-to-br from-green-100 to-emerald-100 overflow-hidden">
 											{notice.noticeimage ? (
@@ -379,13 +347,9 @@ export default function EventsAndNoticesPage() {
 												<p className="text-green-600 text-sm font-medium">{formatDate(notice.noticedate)}</p>
 											</div>
 
-											<h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
-												{notice.noticetitle}
-											</h3>
+											<h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">{notice.noticetitle}</h3>
 
-											<p className="text-gray-600 text-sm leading-relaxed line-clamp-4">
-												{notice.notice}
-											</p>
+											<p className="text-gray-600 text-sm leading-relaxed line-clamp-4">{notice.notice}</p>
 
 											<div className="mt-6 pt-4 border-t border-gray-100">
 												<span className="text-green-600 font-medium text-sm group-hover:text-green-700 inline-flex items-center">

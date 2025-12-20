@@ -29,6 +29,15 @@ export default function StudentsListPage() {
 	const [search, setSearch] = useState("");
 	const [classFilter, setClassFilter] = useState("");
 
+	// Get status filter from query params
+	const [statusFilter, setStatusFilter] = useState<string | null>(null);
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			const params = new URLSearchParams(window.location.search);
+			setStatusFilter(params.get("status"));
+		}
+	}, []);
+
 	useEffect(() => {
 		let ignore = false;
 		const load = async () => {
@@ -40,7 +49,13 @@ export default function StudentsListPage() {
 				if (!res.ok || !data?.success) {
 					throw new Error(data?.error || "Failed to load students");
 				}
-				if (!ignore) setStudents(data.students || []);
+				let filtered = data.students || [];
+				if (statusFilter) {
+					filtered = filtered.filter((s: any) => s.status === statusFilter);
+				} else {
+					filtered = filtered.filter((s: any) => s.status === "active");
+				}
+				if (!ignore) setStudents(filtered);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : "Failed to load students";
 				setError(message);
@@ -53,7 +68,7 @@ export default function StudentsListPage() {
 		return () => {
 			ignore = true;
 		};
-	}, []);
+	}, [statusFilter]);
 
 	const filtered = useMemo(() => {
 		return students.filter((s) => {
@@ -113,18 +128,18 @@ export default function StudentsListPage() {
 				<table>
 					<thead>
 						<tr>${Object.keys(exportRows[0] || {})
-				.map((h) => `<th>${h}</th>`)
-				.join("")}</tr>
+							.map((h) => `<th>${h}</th>`)
+							.join("")}</tr>
 					</thead>
 					<tbody>
 						${exportRows
-				.map(
-					(row) =>
-						`<tr>${Object.keys(row)
-							.map((h) => `<td>${row[h] || ""}</td>`)
-							.join("")}</tr>`
-				)
-				.join("")}
+							.map(
+								(row) =>
+									`<tr>${Object.keys(row)
+										.map((h) => `<td>${row[h] || ""}</td>`)
+										.join("")}</tr>`
+							)
+							.join("")}
 					</tbody>
 				</table>
 			</body>

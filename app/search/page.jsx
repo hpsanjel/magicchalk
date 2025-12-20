@@ -15,6 +15,12 @@ function SearchContent() {
 		notices: [],
 		testimonials: [],
 		pages: [],
+		students: [],
+		teachers: [],
+		users: [],
+		classes: [],
+		assignments: [],
+		attendance: [],
 	});
 	const [loading, setLoading] = useState(true);
 
@@ -28,8 +34,9 @@ function SearchContent() {
 
 	const searchContent = async (searchQuery) => {
 		setLoading(true);
+
 		try {
-			const [blogsRes, eventsRes, galleryRes, noticesRes, testimonialsRes] = await Promise.all([fetch("/api/blogs").then((res) => res.json()), fetch("/api/events").then((res) => res.json()), fetch("/api/gallery").then((res) => res.json()), fetch("/api/notices").then((res) => res.json()), fetch("/api/testimonials").then((res) => res.json())]);
+			const [blogsRes, eventsRes, galleryRes, noticesRes, testimonialsRes, studentsRes, teachersRes, usersRes, classesRes, assignmentsRes, attendanceRes] = await Promise.all([fetch("/api/blogs").then((res) => res.json()), fetch("/api/events").then((res) => res.json()), fetch("/api/gallery").then((res) => res.json()), fetch("/api/notices").then((res) => res.json()), fetch("/api/testimonials").then((res) => res.json()), fetch("/api/students").then((res) => res.json()), fetch("/api/teachers").then((res) => res.json()), fetch("/api/users").then((res) => res.json()), fetch("/api/classes").then((res) => res.json()), fetch("/api/assignments").then((res) => res.json()), fetch("/api/attendance").then((res) => res.json())]);
 
 			const lowerQuery = searchQuery.toLowerCase().trim();
 
@@ -39,6 +46,12 @@ function SearchContent() {
 			const galleryArray = Array.isArray(galleryRes) ? galleryRes : galleryRes.gallery || [];
 			const noticesArray = Array.isArray(noticesRes) ? noticesRes : noticesRes.notices || [];
 			const testimonialsArray = Array.isArray(testimonialsRes) ? testimonialsRes : testimonialsRes.testimonials || [];
+			const studentsArray = Array.isArray(studentsRes) ? studentsRes : studentsRes.students || [];
+			const teachersArray = Array.isArray(teachersRes) ? teachersRes : teachersRes.teachers || [];
+			const usersArray = Array.isArray(usersRes) ? usersRes : usersRes.users || [];
+			const classesArray = Array.isArray(classesRes) ? classesRes : classesRes.classes || [];
+			const assignmentsArray = Array.isArray(assignmentsRes) ? assignmentsRes : assignmentsRes.assignments || [];
+			const attendanceArray = Array.isArray(attendanceRes) ? attendanceRes : attendanceRes.attendance || [];
 
 			// Search blogs
 			const filteredBlogs = blogsArray.filter((blog) => {
@@ -79,6 +92,36 @@ function SearchContent() {
 				return nameMatch || reviewMatch || positionMatch;
 			});
 
+			// Search students
+			const filteredStudents = studentsArray.filter((student) => {
+				return [student.firstName, student.lastName, student.guardianName, student.guardianEmail, student.guardianPhone, student.address, student.classGroup].map((v) => v?.toLowerCase?.() || "").some((v) => v.includes(lowerQuery));
+			});
+
+			// Search teachers
+			const filteredTeachers = teachersArray.filter((teacher) => {
+				return [teacher.firstName, teacher.lastName, teacher.email, teacher.phone, teacher.employeeId, teacher.designation, teacher.subjects?.join(", "), teacher.address].map((v) => v?.toLowerCase?.() || "").some((v) => v.includes(lowerQuery));
+			});
+
+			// Search users
+			const filteredUsers = usersArray.filter((user) => {
+				return [user.fullName, user.email, user.userName, user.role].map((v) => v?.toLowerCase?.() || "").some((v) => v.includes(lowerQuery));
+			});
+
+			// Search classes
+			const filteredClasses = classesArray.filter((cls) => {
+				return [cls.name, cls.slug, cls.description, cls.room].map((v) => v?.toLowerCase?.() || "").some((v) => v.includes(lowerQuery));
+			});
+
+			// Search assignments
+			const filteredAssignments = assignmentsArray.filter((assignment) => {
+				return [assignment.title, assignment.description, assignment.classGroup, assignment.status].map((v) => v?.toLowerCase?.() || "").some((v) => v.includes(lowerQuery));
+			});
+
+			// Search attendance
+			const filteredAttendance = attendanceArray.filter((att) => {
+				return [att.classGroup, att.status, att.markedBy, att.note].map((v) => v?.toLowerCase?.() || "").some((v) => v.includes(lowerQuery));
+			});
+
 			// Static pages search
 			const staticPages = [
 				{ title: "About Us", href: "/about-us", keywords: ["about", "school", "history", "mission", "vision", "values"] },
@@ -104,6 +147,12 @@ function SearchContent() {
 				notices: filteredNotices,
 				testimonials: filteredTestimonials,
 				pages: matchedPages,
+				students: filteredStudents,
+				teachers: filteredTeachers,
+				users: filteredUsers,
+				classes: filteredClasses,
+				assignments: filteredAssignments,
+				attendance: filteredAttendance,
 			});
 		} catch (error) {
 			console.error("Search error:", error);
@@ -112,7 +161,7 @@ function SearchContent() {
 		}
 	};
 
-	const totalResults = results.blogs.length + results.events.length + results.gallery.length + results.notices.length + results.testimonials.length + results.pages.length;
+	const totalResults = results.blogs.length + results.events.length + results.gallery.length + results.notices.length + results.testimonials.length + results.pages.length + results.students.length + results.teachers.length + results.users.length + results.classes.length + results.assignments.length + results.attendance.length;
 
 	return (
 		<div className="min-h-screen bg-gray-50 py-32 px-4">
@@ -139,6 +188,140 @@ function SearchContent() {
 					</div>
 				) : (
 					<div className="space-y-8">
+						{/* Students Section */}
+						{results.students.length > 0 && (
+							<section>
+								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+									<User className="text-green-700" />
+									Students ({results.students.length})
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+									{results.students.map((student) => (
+										<div key={student._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+											<h3 className="font-bold text-xl text-gray-900 mb-2">
+												{student.firstName} {student.lastName}
+											</h3>
+											<p className="text-gray-600 mb-1">Class: {student.classGroup}</p>
+											<p className="text-gray-600 mb-1">Guardian: {student.guardianName}</p>
+											<p className="text-gray-600 mb-1">Email: {student.guardianEmail}</p>
+											<p className="text-gray-600 mb-1">Phone: {student.guardianPhone}</p>
+											<Link href={`/dashboard/students/${student._id}`} className="text-green-700 hover:underline text-sm mt-2 inline-block">
+												View Details
+											</Link>
+										</div>
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* Teachers Section */}
+						{results.teachers.length > 0 && (
+							<section>
+								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+									<User className="text-green-700" />
+									Teachers ({results.teachers.length})
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+									{results.teachers.map((teacher) => (
+										<div key={teacher._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+											<h3 className="font-bold text-xl text-gray-900 mb-2">
+												{teacher.firstName} {teacher.lastName}
+											</h3>
+											<p className="text-gray-600 mb-1">Email: {teacher.email}</p>
+											<p className="text-gray-600 mb-1">Phone: {teacher.phone}</p>
+											<p className="text-gray-600 mb-1">Designation: {teacher.designation}</p>
+											<p className="text-gray-600 mb-1">Employee ID: {teacher.employeeId}</p>
+										</div>
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* Users Section */}
+						{results.users.length > 0 && (
+							<section>
+								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+									<User className="text-green-700" />
+									Users ({results.users.length})
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+									{results.users.map((user) => (
+										<div key={user._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+											<h3 className="font-bold text-xl text-gray-900 mb-2">{user.fullName}</h3>
+											<p className="text-gray-600 mb-1">Email: {user.email}</p>
+											<p className="text-gray-600 mb-1">Role: {user.role}</p>
+										</div>
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* Classes Section */}
+						{results.classes.length > 0 && (
+							<section>
+								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+									<BookOpen className="text-green-700" />
+									Classes ({results.classes.length})
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+									{results.classes.map((cls) => (
+										<div key={cls._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+											<h3 className="font-bold text-xl text-gray-900 mb-2">{cls.name}</h3>
+											<p className="text-gray-600 mb-1">Slug: {cls.slug}</p>
+											<p className="text-gray-600 mb-1">Room: {cls.room}</p>
+											<p className="text-gray-600 mb-1">Description: {cls.description}</p>
+											<Link href={`/dashboard/classes/${cls._id}`} className="text-green-700 hover:underline text-sm mt-2 inline-block">
+												View Details
+											</Link>
+										</div>
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* Assignments Section */}
+						{results.assignments.length > 0 && (
+							<section>
+								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+									<BookOpen className="text-green-700" />
+									Assignments ({results.assignments.length})
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+									{results.assignments.map((assignment) => (
+										<div key={assignment._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+											<h3 className="font-bold text-xl text-gray-900 mb-2">{assignment.title}</h3>
+											<p className="text-gray-600 mb-1">Class: {assignment.classGroup}</p>
+											<p className="text-gray-600 mb-1">Status: {assignment.status}</p>
+											<p className="text-gray-600 mb-1">Description: {assignment.description}</p>
+											<Link href={`/dashboard/assignments/${assignment._id}`} className="text-green-700 hover:underline text-sm mt-2 inline-block">
+												View Details
+											</Link>
+										</div>
+									))}
+								</div>
+							</section>
+						)}
+
+						{/* Attendance Section */}
+						{results.attendance.length > 0 && (
+							<section>
+								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+									<BookOpen className="text-green-700" />
+									Attendance ({results.attendance.length})
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+									{results.attendance.map((att) => (
+										<div key={att._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+											<h3 className="font-bold text-xl text-gray-900 mb-2">Class: {att.classGroup}</h3>
+											<p className="text-gray-600 mb-1">Status: {att.status}</p>
+											<p className="text-gray-600 mb-1">Marked By: {att.markedBy}</p>
+											<p className="text-gray-600 mb-1">Note: {att.note}</p>
+											<p className="text-gray-600 mb-1">Date: {att.date ? new Date(att.date).toLocaleDateString() : ""}</p>
+										</div>
+									))}
+								</div>
+							</section>
+						)}
 						{/* Blogs Section */}
 						{results.blogs.length > 0 && (
 							<section>

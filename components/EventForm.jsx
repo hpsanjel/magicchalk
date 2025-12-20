@@ -12,19 +12,9 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null, c
 	const [formData, setFormData] = useState({
 		eventname: "",
 		eventdescription: "",
-		eventcountry: "",
 		eventvenue: "",
 		eventdate: "",
-		earlyBirdPrice: "",
-		vipPrice: "",
-		standardPrice: "",
-		frontRowPrice: "",
-		backRowPrice: "",
-		preSalePrice: "",
-		doorSalePrice: "",
 		eventtime: "",
-		eventspotifyUrl: "",
-		eventyoutubeUrl: "",
 		classId: defaultClassId || "",
 		classLabel: defaultClassLabel || "",
 		eventposter: null,
@@ -40,7 +30,7 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null, c
 			const eventDateValue = eventToEdit.eventdate ? String(eventToEdit.eventdate).split("T")[0] : "";
 			const eventClassId = eventToEdit.classId?._id || eventToEdit.classId || "";
 			const eventClassLabel = eventToEdit.classLabel || eventToEdit.classId?.name || "";
-			const stringKeys = ["eventname", "eventdescription", "eventcountry", "eventvenue", "earlyBirdPrice", "vipPrice", "standardPrice", "frontRowPrice", "backRowPrice", "preSalePrice", "doorSalePrice", "eventtime", "eventspotifyUrl", "eventyoutubeUrl"];
+			const stringKeys = ["eventname", "eventdescription", "eventvenue", "eventtime"];
 			const sanitizedStrings = stringKeys.reduce((acc, key) => {
 				acc[key] = toSafeString(eventToEdit[key]);
 				return acc;
@@ -99,19 +89,9 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null, c
 				setFormData({
 					eventname: "",
 					eventdescription: "",
-					eventcountry: "",
 					eventvenue: "",
 					eventdate: "",
-					earlyBirdPrice: "",
-					vipPrice: "",
-					standardPrice: "",
-					frontRowPrice: "",
-					backRowPrice: "",
-					preSalePrice: "",
-					doorSalePrice: "",
 					eventtime: "",
-					eventspotifyUrl: "",
-					eventyoutubeUrl: "",
 					classId: defaultClassId || "",
 					classLabel: defaultClassLabel || "",
 					eventposter: null,
@@ -158,25 +138,18 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null, c
 					<input type="text" id="eventname" value={formData.eventname} onChange={(e) => setFormData({ ...formData, eventname: e.target.value })} className="w-full p-2 border rounded" required />
 				</div>
 				<div>
-					<label htmlFor="eventdescription" className="block mb-2 font-bold">
-						Description of Event
-					</label>
-					<textarea id="eventdescription" value={formData.eventdescription} onChange={(e) => setFormData({ ...formData, eventdescription: e.target.value })} className="w-full p-2 border rounded" rows={3} required />
-
-					{/* <input type="text" id="eventdescription" value={formData.eventdescription} onChange={(e) => setFormData({ ...formData, eventdescription: e.target.value })} className="w-full p-2 border rounded" /> */}
-				</div>
-				<div>
-					<label htmlFor="eventcountry" className="block mb-2 font-bold">
-						Event Country
-					</label>
-					<input id="eventcountry" value={formData.eventcountry} onChange={(e) => setFormData({ ...formData, eventcountry: e.target.value })} className="w-full p-2 border rounded" required />
-				</div>
-				<div>
 					<label htmlFor="eventvenue" className="block mb-2 font-bold">
 						Event Venue
 					</label>
 					<input id="eventvenue" value={formData.eventvenue} onChange={(e) => setFormData({ ...formData, eventvenue: e.target.value })} className="w-full p-2 border rounded" />
 				</div>
+				<div>
+					<label htmlFor="eventdescription" className="block mb-2 font-bold">
+						Description of Event
+					</label>
+					<textarea id="eventdescription" value={formData.eventdescription} onChange={(e) => setFormData({ ...formData, eventdescription: e.target.value })} className="w-full p-2 border rounded" rows={1} required />
+				</div>
+
 				{classOptions.length > 0 && (
 					<div className="md:col-span-2">
 						<label htmlFor="classId" className="block mb-2 font-bold">
@@ -218,73 +191,7 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null, c
 					</label>
 					<input type="text" id="eventtime" value={formData.eventtime} onChange={(e) => setFormData({ ...formData, eventtime: e.target.value })} className="w-full p-2 border rounded" />
 				</div>
-				{/* <div>
-					<label htmlFor="eventprice" className="block mb-2 font-bold">
-						Event Price
-					</label>
-					<input type="text" id="eventprice" value={formData.eventprice} onChange={(e) => setFormData({ ...formData, eventprice: e.target.value })} className="w-full p-2 border rounded" />
-				</div> */}
-				<div>
-					<label htmlFor="earlyBirdPrice" className="block mb-2 font-bold">
-						Early Bird Price
-					</label>
-					<input type="text" id="earlyBirdPrice" value={formData.earlyBirdPrice} onChange={(e) => setFormData({ ...formData, earlyBirdPrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
 
-				<div>
-					<label htmlFor="vipPrice" className="block mb-2 font-bold">
-						VIP Price
-					</label>
-					<input type="text" id="vipPrice" value={formData.vipPrice} onChange={(e) => setFormData({ ...formData, vipPrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-
-				<div>
-					<label htmlFor="standardPrice" className="block mb-2 font-bold">
-						Standard Price
-					</label>
-					<input type="text" id="standardPrice" value={formData.standardPrice} onChange={(e) => setFormData({ ...formData, standardPrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-
-				<div>
-					<label htmlFor="frontRowPrice" className="block mb-2 font-bold">
-						Front Row Price
-					</label>
-					<input type="text" id="frontRowPrice" value={formData.frontRowPrice} onChange={(e) => setFormData({ ...formData, frontRowPrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-
-				<div>
-					<label htmlFor="backRowPrice" className="block mb-2 font-bold">
-						Back Row Price
-					</label>
-					<input type="text" id="backRowPrice" value={formData.backRowPrice} onChange={(e) => setFormData({ ...formData, backRowPrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-
-				<div>
-					<label htmlFor="preSalePrice" className="block mb-2 font-bold">
-						Pre Sale Price
-					</label>
-					<input type="text" id="preSalePrice" value={formData.preSalePrice} onChange={(e) => setFormData({ ...formData, preSalePrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-
-				<div>
-					<label htmlFor="doorSalePrice" className="block mb-2 font-bold">
-						Door Sale Price
-					</label>
-					<input type="text" id="doorSalePrice" value={formData.doorSalePrice} onChange={(e) => setFormData({ ...formData, doorSalePrice: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-
-				<div>
-					<label htmlFor="eventspotifyUrl" className="block mb-2 font-bold">
-						Spotify Url
-					</label>
-					<input type="text" id="eventspotifyUrl" value={formData.eventspotifyUrl} onChange={(e) => setFormData({ ...formData, eventspotifyUrl: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
-				<div>
-					<label htmlFor="eventyoutubeUrl" className="block mb-2 font-bold">
-						Youtube Url
-					</label>
-					<input type="text" id="eventyoutubeUrl" value={formData.eventyoutubeUrl} onChange={(e) => setFormData({ ...formData, eventyoutubeUrl: e.target.value })} className="w-full p-2 border rounded" />
-				</div>
 				<div>
 					<label htmlFor="eventposter" className="block mb-2 font-bold">
 						Event Main Poster
@@ -309,7 +216,7 @@ export default function EventForm({ handleCloseEventModal, eventToEdit = null, c
 					</label>
 					<input type="file" id="eventvideo" onChange={(e) => setFormData({ ...formData, eventvideo: e.target.files[0] })} className="w-full p-2 border rounded" />
 				</div>
-				<div className="grid grid-cols-2 gap-2">
+				<div className="grid gap-2">
 					<button type="submit" disabled={submitting} className={`w-full p-1.5 rounded ${submitting ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"} text-slate-200 font-bold`}>
 						{submitting ? `${eventToEdit ? "Updating" : "Creating"} Event...` : `${eventToEdit ? "Update" : "Create"} Event`}
 					</button>

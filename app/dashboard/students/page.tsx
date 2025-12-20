@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, Suspense } from "react";
+import StudentForm from "@/components/StudentForm";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 
@@ -9,6 +10,24 @@ import { toast } from "@/hooks/use-toast";
 type CsvRow = string[];
 type ParsedCsv = { headers: string[]; rows: CsvRow[] };
 type StudentUploadResult = { inserted: number; errors: { index: number; reason: string }[] };
+type StudentFormData = {
+	firstName: string;
+	lastName: string;
+	dob: string;
+	gender: string;
+	guardianName: string;
+	guardianPhone: string;
+	guardianEmail: string;
+	address: string;
+	classGroup: string;
+	enrollmentDate: string;
+	allergies: string;
+	medicalNotes: string;
+	transportRoute: string;
+	pickupPerson: string;
+	emergencyContact: string;
+	photoUrl?: string;
+};
 
 const REQUIRED_HEADERS = ["firstName", "lastName", "dob", "gender", "guardianName", "guardianPhone", "guardianEmail", "address", "classGroup", "enrollmentDate", "allergies", "medicalNotes", "transportRoute", "pickupPerson", "emergencyContact"];
 
@@ -128,10 +147,6 @@ const sampleStudents = [
 	},
 ];
 
-const inputClass = "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500";
-const labelClass = "text-sm font-semibold text-gray-800";
-const sectionCardClass = "rounded-xl border border-gray-100 bg-white shadow-sm p-5";
-
 function emptyFormState() {
 	return {
 		firstName: "",
@@ -149,6 +164,7 @@ function emptyFormState() {
 		transportRoute: "",
 		pickupPerson: "",
 		emergencyContact: "",
+		photoUrl: "",
 	};
 }
 
@@ -161,7 +177,7 @@ function formatDateForInput(value?: string) {
 
 function StudentsAdminPageContent() {
 	const searchParams = useSearchParams();
-	const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
+	const [activeTab, setActiveTab] = useState<"single" | "bulk" | "view">("single");
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [selectedFileName, setSelectedFileName] = useState<string>("");
 	const [uploading, setUploading] = useState(false);
@@ -171,22 +187,16 @@ function StudentsAdminPageContent() {
 	const [singleForm, setSingleForm] = useState(emptyFormState);
 	const [editingId, setEditingId] = useState<string>("");
 	const [loadingEdit, setLoadingEdit] = useState(false);
-	const [classes, setClasses] = useState<{ _id: string; name: string }[]>([]);
-	const [classesError, setClassesError] = useState<string>("");
+	// Removed unused classes state
 	const isEditing = Boolean(editingId);
 	const sampleCsv = useMemo(() => {
 		const headers = Object.keys(sampleStudents[0]);
-		const rows = sampleStudents.map((row) => headers.map((key) => JSON.stringify(row[key as keyof typeof row] ?? ""))); // keep commas inside values safe
+		const rows = sampleStudents.map((row) => headers.map((key) => JSON.stringify(row[key as keyof typeof row] ?? "")));
 		return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 	}, []);
 	const router = useRouter();
-	const classOptions = useMemo(() => {
-		const names = classes.map((c) => c.name);
-		if (singleForm.classGroup && !names.includes(singleForm.classGroup)) {
-			return [singleForm.classGroup, ...names];
-		}
-		return names;
-	}, [classes, singleForm.classGroup]);
+	// Ref for top of page
+	const topRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const idParam = searchParams.get("id");
@@ -223,6 +233,7 @@ function StudentsAdminPageContent() {
 					transportRoute: s.transportRoute || "",
 					pickupPerson: s.pickupPerson || "",
 					emergencyContact: s.emergencyContact || "",
+					photoUrl: s.photoUrl || "",
 				});
 			} catch (error) {
 				const message = error instanceof Error ? error.message : "Failed to load student";
@@ -234,28 +245,7 @@ function StudentsAdminPageContent() {
 		})();
 	}, [searchParams]);
 
-	useEffect(() => {
-		let ignore = false;
-		(async () => {
-			try {
-				setClassesError("");
-				const res = await fetch("/api/classes");
-				const data = await res.json();
-				if (!res.ok || !data?.success || !Array.isArray(data.classes)) {
-					throw new Error(data?.error || "Unable to load classes");
-				}
-				if (!ignore) {
-					setClasses(data.classes);
-				}
-			} catch (error) {
-				const message = error instanceof Error ? error.message : "Failed to load classes";
-				if (!ignore) setClassesError(message);
-			}
-		})();
-		return () => {
-			ignore = true;
-		};
-	}, []);
+	// Removed useEffect for fetching classes (unused)
 
 	const handleDownloadSample = () => {
 		const blob = new Blob([sampleCsv], { type: "text/csv;charset=utf-8;" });
@@ -271,65 +261,6 @@ function StudentsAdminPageContent() {
 
 	const handleClickUpload = () => {
 		fileInputRef.current?.click();
-	};
-
-	const handleSingleChange = (field: keyof typeof singleForm) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-		setSingleForm((prev) => ({ ...prev, [field]: event.target.value }));
-	};
-
-	const handleSaveSingle = async () => {
-		const required = ["firstName", "lastName", "dob", "classGroup", "enrollmentDate", "guardianName", "guardianPhone", "address", "emergencyContact"] as const;
-		const missing = required.filter((field) => !singleForm[field]);
-		if (missing.length) {
-			const message = `Please fill required fields: ${missing.join(", ")}`;
-			toast({ title: "Missing fields", description: message });
-			return;
-		}
-
-		setSingleSaving(true);
-		try {
-			const studentPayload = {
-				...singleForm,
-				guardianEmail: singleForm.guardianEmail.trim() || undefined,
-			};
-
-			if (isEditing) {
-				const response = await fetch("/api/students", {
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ id: editingId, student: studentPayload }),
-				});
-				const data = await response.json();
-				if (!response.ok || !data?.success) {
-					const message = data?.error || `Could not update student (status ${response.status}).`;
-					toast({ title: "Update failed", description: message });
-					return;
-				}
-				toast({ title: "Student updated", description: "Changes saved successfully." });
-				router.push(`/dashboard/students/${editingId}`);
-			} else {
-				const payload = { students: [studentPayload] };
-				const response = await fetch("/api/students", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				});
-				const data = await response.json();
-				if (!response.ok || !data?.success) {
-					const firstError = Array.isArray(data?.errors) && data.errors.length ? data.errors[0].reason : null;
-					const message = data?.error || firstError || `Could not save student (status ${response.status}).`;
-					toast({ title: "Save failed", description: message });
-					return;
-				}
-				toast({ title: "Student saved", description: "Student was added successfully." });
-				setSingleForm(emptyFormState());
-			}
-		} catch (error) {
-			const message = error instanceof Error ? error.message : "Unexpected error while saving.";
-			toast({ title: "Save failed", description: message });
-		} finally {
-			setSingleSaving(false);
-		}
 	};
 
 	const processUpload = async (file: File) => {
@@ -428,128 +359,106 @@ function StudentsAdminPageContent() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-gray-50" ref={topRef}>
 			<header className="border-b border-gray-100 bg-white">
 				<div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
 					<div>
 						<p className="text-sm text-gray-500">Students</p>
-						<h1 className="text-2xl font-semibold text-gray-900">{isEditing ? "Update Student" : "Add New Students"}</h1>
+						<h1 className="text-2xl font-semibold text-gray-900">{isEditing ? "Update Student" : "Add New Student/s"}</h1>
 						<p className="text-sm text-gray-500">{isEditing ? "Edit details for the selected student." : "Single entry or bulk import for kindergarten students."}</p>
 					</div>
 				</div>
 			</header>
 
 			<main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
-				<div className="flex flex-wrap gap-2 rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
-					<button onClick={() => setActiveTab("single")} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeTab === "single" ? "bg-green-600 text-white shadow" : "text-gray-700 hover:bg-gray-100"}`}>
-						Add single student
-					</button>
-					<button onClick={() => setActiveTab("bulk")} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeTab === "bulk" ? "bg-green-600 text-white shadow" : "text-gray-700 hover:bg-gray-100"}`}>
-						Bulk upload
-					</button>
+				<div className="flex flex-wrap justify-between gap-2 rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
+					<div className="flex gap-2">
+						<button onClick={() => setActiveTab("single")} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeTab === "single" ? "bg-green-600 text-white shadow" : "text-gray-700 hover:bg-gray-100"}`}>
+							{isEditing ? "You are now UPDATING a student" : "Add single student"}
+						</button>
+						<button onClick={() => setActiveTab("bulk")} className={`rounded-lg px-4 py-2 text-sm font-semibold bg-gray-100 transition ${activeTab === "bulk" ? "bg-green-600 text-white shadow" : "text-gray-700 hover:bg-gray-200"}`}>
+							Bulk upload
+						</button>
+					</div>
+					<div className="flex gap-2">
+						<button onClick={() => router.push("/dashboard/students/list")} className="rounded-lg px-4 py-2 text-sm font-semibold transition bg-gray-100 hover:bg-gray-200">
+							View Existing Students
+						</button>
+						<button onClick={() => router.push("/dashboard/students/list?status=pending")} className="rounded-lg px-4 py-2 text-sm font-semibold transition bg-blue-500 text-white hover:bg-blue-700">
+							View Prospective Students
+						</button>
+					</div>
 				</div>
 
 				{activeTab === "single" && (
-					<section className={sectionCardClass}>
-						<div className="mb-4 flex items-center justify-between">
-							<h2 className="text-lg font-semibold text-gray-900">{isEditing ? "Update student" : "Single student"}</h2>
-						</div>
-						{isEditing && <p className="mb-2 text-sm text-gray-600">Loaded from student record. Adjust fields and click Update student.</p>}
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<div className="space-y-1">
-								<label className={labelClass}>First name *</label>
-								<input className={inputClass} placeholder="Ava" value={singleForm.firstName} onChange={handleSingleChange("firstName")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Last name *</label>
-								<input className={inputClass} placeholder="Johnson" value={singleForm.lastName} onChange={handleSingleChange("lastName")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Date of birth *</label>
-								<input type="date" className={inputClass} value={singleForm.dob} onChange={handleSingleChange("dob")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Gender</label>
-								<select className={inputClass} value={singleForm.gender} onChange={handleSingleChange("gender")}>
-									<option value="">Select gender</option>
-									<option>Female</option>
-									<option>Male</option>
-									<option>Non-binary</option>
-									<option>Prefer not to say</option>
-								</select>
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Class / Group *</label>
-								<select className={inputClass} value={singleForm.classGroup} onChange={handleSingleChange("classGroup")}>
-									<option value="">Select class</option>
-									{classOptions.map((name) => (
-										<option key={name} value={name}>
-											{name}
-										</option>
-									))}
-								</select>
-								{classesError && <p className="text-xs text-red-600">{classesError}</p>}
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Enrollment date *</label>
-								<input type="date" className={inputClass} value={singleForm.enrollmentDate} onChange={handleSingleChange("enrollmentDate")} />
-							</div>
-							<div className="space-y-1 md:col-span-2">
-								<label className={labelClass}>Home address *</label>
-								<input className={inputClass} placeholder="123 Maple St, Springfield" value={singleForm.address} onChange={handleSingleChange("address")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Guardian name *</label>
-								<input className={inputClass} placeholder="Emily Johnson" value={singleForm.guardianName} onChange={handleSingleChange("guardianName")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Guardian phone *</label>
-								<input className={inputClass} placeholder="+1-555-123-4567" value={singleForm.guardianPhone} onChange={handleSingleChange("guardianPhone")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Guardian email</label>
-								<input className={inputClass} placeholder="guardian@example.com" value={singleForm.guardianEmail} onChange={handleSingleChange("guardianEmail")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Emergency contact *</label>
-								<input className={inputClass} placeholder="+1-555-987-6543" value={singleForm.emergencyContact} onChange={handleSingleChange("emergencyContact")} />
-							</div>
-							<div className="space-y-1 md:col-span-2">
-								<label className={labelClass}>Authorized pickup person</label>
-								<input className={inputClass} placeholder="Grandma Sarah" value={singleForm.pickupPerson} onChange={handleSingleChange("pickupPerson")} />
-							</div>
-							<div className="space-y-1 md:col-span-2">
-								<label className={labelClass}>Allergies</label>
-								<textarea className={inputClass} rows={2} placeholder="Peanuts" value={singleForm.allergies} onChange={handleSingleChange("allergies")} />
-							</div>
-							<div className="space-y-1 md:col-span-2">
-								<label className={labelClass}>Medical notes</label>
-								<textarea className={inputClass} rows={2} placeholder="Carries epi-pen" value={singleForm.medicalNotes} onChange={handleSingleChange("medicalNotes")} />
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Transport route</label>
-								<select className={inputClass} value={singleForm.transportRoute} onChange={handleSingleChange("transportRoute")}>
-									<option value="">Select route</option>
-									<option>Route A</option>
-									<option>Route B</option>
-									<option>Route C</option>
-								</select>
-							</div>
-							<div className="space-y-1">
-								<label className={labelClass}>Preferred pickup time</label>
-								<input className={inputClass} placeholder="3:00 PM" />
-							</div>
-						</div>
-						<div className="mt-6 flex justify-end">
-							<button className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50" onClick={handleSaveSingle} disabled={singleSaving || loadingEdit}>
-								{singleSaving ? (isEditing ? "Updating..." : "Saving...") : isEditing ? "Update student" : "Save student"}
-							</button>
-						</div>
-					</section>
+					<StudentForm
+						initialValues={singleForm}
+						loading={singleSaving || loadingEdit}
+						submitLabel={isEditing ? "Update student" : "Save student"}
+						isEditing={isEditing}
+						onSubmit={async (formData: StudentFormData) => {
+							const required = ["firstName", "lastName", "dob", "classGroup", "enrollmentDate", "guardianName", "guardianPhone", "address", "emergencyContact"];
+							const missing = required.filter((field) => !formData[field as keyof StudentFormData]);
+							if (missing.length) {
+								toast({ title: "Missing fields", description: `Please fill required fields: ${missing.join(", ")}` });
+								return;
+							}
+							setSingleSaving(true);
+							try {
+								const studentPayload = {
+									...formData,
+									guardianEmail: formData.guardianEmail?.trim() || undefined,
+								};
+								if (isEditing) {
+									const response = await fetch("/api/students", {
+										method: "PUT",
+										headers: { "Content-Type": "application/json" },
+										body: JSON.stringify({ id: editingId, student: studentPayload }),
+									});
+									const data = await response.json();
+									if (!response.ok || !data?.success) {
+										const message = data?.error || `Could not update student (status ${response.status}).`;
+										toast({ title: "Update failed", description: message });
+										return;
+									}
+									toast({ title: "Student updated", description: "Changes saved successfully." });
+									// Reset form and editing state after update
+									setSingleForm(emptyFormState());
+									setEditingId("");
+									setActiveTab("single");
+									// Smooth scroll to top after update using ref
+									if (topRef.current) {
+										topRef.current.scrollIntoView({ behavior: "smooth" });
+									}
+								} else {
+									const payload = { students: [studentPayload] };
+									const response = await fetch("/api/students", {
+										method: "POST",
+										headers: { "Content-Type": "application/json" },
+										body: JSON.stringify(payload),
+									});
+									const data = await response.json();
+									if (!response.ok || !data?.success) {
+										const firstError = Array.isArray(data?.errors) && data.errors.length ? data.errors[0].reason : null;
+										const message = data?.error || firstError || `Could not save student (status ${response.status}).`;
+										toast({ title: "Save failed", description: message });
+										return;
+									}
+									toast({ title: "Student saved", description: "Student was added successfully." });
+									setSingleForm(emptyFormState());
+								}
+							} catch (error) {
+								const message = error instanceof Error ? error.message : "Unexpected error while saving.";
+								toast({ title: "Save failed", description: message });
+							} finally {
+								setSingleSaving(false);
+							}
+						}}
+					/>
 				)}
 
 				{activeTab === "bulk" && (
-					<section className={sectionCardClass}>
+					<section>
 						<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 							<h2 className="text-lg font-semibold text-gray-900">Bulk upload</h2>
 							<div className="flex flex-wrap gap-2">
@@ -564,16 +473,6 @@ function StudentsAdminPageContent() {
 						</div>
 						<div className="grid gap-4 md:grid-cols-2">
 							<div></div>
-							{/* <div className="space-y-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
-								<p className="text-sm font-semibold text-gray-800">Required headers</p>
-								<div className="flex flex-wrap gap-2 text-xs">
-									{Object.keys(sampleStudents[0]).map((key) => (
-										<span key={key} className="rounded-full bg-gray-100 px-3 py-1 text-gray-700 border border-gray-200">
-											{key}
-										</span>
-									))}
-								</div>
-							</div> */}
 							<div className="space-y-3 rounded-lg border border-gray-100 bg-white p-4 shadow-inner">
 								<p className="text-sm font-semibold text-gray-800">Attach file</p>
 								<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600" onDrop={handleDrop} onDragOver={handleDragOver}>

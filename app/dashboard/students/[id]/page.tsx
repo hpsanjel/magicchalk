@@ -21,6 +21,7 @@ export default function StudentDetailPage() {
 	const [student, setStudent] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string>("");
+	const [admitting, setAdmitting] = useState(false);
 
 	useEffect(() => {
 		let ignore = false;
@@ -67,60 +68,107 @@ export default function StudentDetailPage() {
 			) : !student ? (
 				<div className="rounded-lg border border-gray-200 bg-white p-4 text-gray-600">Student not found.</div>
 			) : (
-				<div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
-					<div className="grid gap-4 md:grid-cols-2">
+				<div className="rounded-2xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+					{/* Header Card */}
+					<div className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b border-gray-100">
+						<div className="flex-shrink-0">
+							{student.photoUrl ? (
+								<img src={student.photoUrl} alt="Student photo" className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg" style={{ background: "#f3f4f6" }} />
+							) : (
+								<div className="h-32 w-32 rounded-full flex items-center justify-center bg-gray-100 border-4 border-white text-gray-400 text-4xl font-bold shadow-lg">
+									<span>{student.firstName?.[0] || "?"}</span>
+								</div>
+							)}
+						</div>
+						<div className="flex-1 min-w-0">
+							<div className="flex items-center gap-3 mb-2">
+								<h2 className="text-2xl font-bold text-gray-900 truncate">
+									{student.firstName} {student.lastName}
+								</h2>
+								{student.status && <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${student.status === "active" ? "bg-green-100 text-green-700" : student.status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{student.status.charAt(0).toUpperCase() + student.status.slice(1)}</span>}
+							</div>
+							<div className="text-gray-600 text-sm mb-1">
+								Class: <span className="font-medium text-gray-800">{student.classGroup || "-"}</span>
+							</div>
+							<div className="text-gray-600 text-sm">
+								Enrolled: <span className="font-medium text-gray-800">{formatDate(student.enrollmentDate)}</span>
+							</div>
+						</div>
+					</div>
+					{/* Info Grid */}
+					<div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 bg-white">
 						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Name</h3>
-							<p className="text-gray-900">
-								{student.firstName} {student.lastName}
-							</p>
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Date of Birth</h3>
+							<p className="text-gray-900 font-medium">{formatDate(student.dob)}</p>
 						</div>
 						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Class</h3>
-							<p className="text-gray-900">{student.classGroup || "-"}</p>
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Guardian</h3>
+							<p className="text-gray-900 font-medium">{student.guardianName || "-"}</p>
 						</div>
 						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Enrollment date</h3>
-							<p className="text-gray-900">{formatDate(student.enrollmentDate)}</p>
-						</div>
-						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Date of birth</h3>
-							<p className="text-gray-900">{formatDate(student.dob)}</p>
-						</div>
-						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Guardian</h3>
-							<p className="text-gray-900">{student.guardianName || "-"}</p>
-						</div>
-						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Contacts</h3>
-							<div className="text-sm text-gray-800 space-y-1">
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Contacts</h3>
+							<div className="text-gray-800 text-sm space-y-1">
 								{student.guardianPhone && <div>📞 {student.guardianPhone}</div>}
 								{student.guardianEmail && <div>✉️ {student.guardianEmail}</div>}
 								<div>Emergency: {student.emergencyContact || "-"}</div>
 							</div>
 						</div>
 						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Transport</h3>
-							<p className="text-gray-900">{student.transportRoute || "-"}</p>
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Transport</h3>
+							<p className="text-gray-900 font-medium">{student.transportRoute || "-"}</p>
 						</div>
 						<div>
-							<h3 className="text-sm font-semibold text-gray-800">Pickup person</h3>
-							<p className="text-gray-900">{student.pickupPerson || "-"}</p>
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Pickup Person</h3>
+							<p className="text-gray-900 font-medium">{student.pickupPerson || "-"}</p>
+						</div>
+						<div>
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Allergies</h3>
+							<p className="text-gray-900 font-medium">{student.allergies || "None"}</p>
 						</div>
 						<div className="md:col-span-2">
-							<h3 className="text-sm font-semibold text-gray-800">Allergies</h3>
-							<p className="text-gray-900">{student.allergies || "None"}</p>
-						</div>
-						<div className="md:col-span-2">
-							<h3 className="text-sm font-semibold text-gray-800">Medical notes</h3>
-							<p className="text-gray-900">{student.medicalNotes || "None"}</p>
+							<h3 className="text-xs font-semibold text-gray-500 uppercase mb-1">Medical Notes</h3>
+							<p className="text-gray-900 font-medium">{student.medicalNotes || "None"}</p>
 						</div>
 					</div>
-					<div className="mt-6 flex justify-end gap-3 text-sm">
-						<Link href={`/dashboard/students?id=${id}`} className="text-gray-700 hover:text-gray-900">
+					{/* Actions */}
+					<div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50">
+						<Link href={`/dashboard/students?id=${id}`} className="rounded-lg bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700 transition">
 							Edit
 						</Link>
+						{student.status === "pending" && (
+							<button
+								className="rounded-lg bg-green-600 px-4 py-2 text-white font-semibold hover:bg-green-700 disabled:opacity-50"
+								disabled={admitting}
+								onClick={async () => {
+									setAdmitting(true);
+									try {
+										if (!student) throw new Error("Student data not loaded");
+										const updatedStudent = { ...student, status: "active" };
+										const res = await fetch("/api/students", {
+											method: "PUT",
+											headers: { "Content-Type": "application/json" },
+											body: JSON.stringify({ id, student: updatedStudent }),
+										});
+										const data = await res.json();
+										if (!res.ok || !data?.success) {
+											throw new Error(data?.error || "Failed to admit student");
+										}
+										toast({ title: "Student admitted", description: "Status updated to active." });
+										// Redirect to students list after admit
+										router.push("/dashboard/students");
+									} catch (err) {
+										const message = err instanceof Error ? err.message : "Failed to admit student";
+										toast({ title: "Admit failed", description: message });
+									} finally {
+										setAdmitting(false);
+									}
+								}}
+							>
+								{admitting ? "Admitting..." : "Admit Now"}
+							</button>
+						)}
 					</div>
+					{/* (Removed duplicate action buttons and extra closing div) */}
 				</div>
 			)}
 		</div>

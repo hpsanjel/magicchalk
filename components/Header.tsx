@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Facebook, Instagram, Menu, Search, X, ChevronDown, User, LogOut } from "lucide-react";
 import Image from "next/image";
+import useFetchData from "@/hooks/useFetchData";
 import Link from "next/link";
 import SearchModal from "@/components/SearchModal";
 import { usePathname, useRouter } from "next/navigation";
@@ -63,6 +64,22 @@ const NavItem = ({ title, href, isScrolled, pathname, dropdownItems, activeDropd
 };
 
 export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
+	interface Setting {
+		companyLogo?: string;
+		name?: string;
+		about?: string;
+		address?: string;
+		email?: string;
+		phone?: string;
+		mobile?: string;
+		facebook?: string;
+		youtube?: string;
+		instagram?: string;
+		linkedin?: string;
+		businessHoursMF?: string;
+	}
+	const { data } = useFetchData("/api/settings", "settings");
+	const settings = (data ?? []) as Setting[];
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -200,7 +217,7 @@ export default function Header({ isMenuOpen, toggleMenu }: HeaderProps) {
 		<motion.header ref={headerRef} className={`fixed w-full z-50 transition-colors duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-green-700"}`} initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.5 }} onClick={handleHeaderClick}>
 			<div className="container mx-auto p-4 flex justify-between items-center">
 				<Link href="/" className="flex items-center space-x-4 cursor-pointer group">
-					<Image src="/magicchalklogo.png" alt="KNS Entertainment" width={200} height={200} className="w-auto h-12 md:h-16 rounded-md bg-slate-900 group-hover:bg-slate-100" />
+					<Image src={settings?.[0]?.companyLogo || "/magicchalklogo.png"} alt="Magic Chalk Logo" width={200} height={200} className="w-auto h-12 md:h-16 rounded-md bg-slate-900 group-hover:bg-slate-100" />
 				</Link>
 
 				<div className="flex gap-6 items-center">
