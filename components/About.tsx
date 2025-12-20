@@ -16,9 +16,9 @@ export default function About() {
 
 			{/* Content container */}
 			<div className="container mx-auto flex flex-col md:flex-row gap-8 px-4 relative z-10">
-				<motion.div className="mx-auto bg-white rounded-lg shadow-2xl overflow-hidden" initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: "easeOut" }}>
+				<motion.div className="mx-auto bg-white overflow-hidden" initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: "easeOut" }}>
 					{/* green accent bar */}
-					<div className="h-2 bg-green-600 w-full"></div>
+					<div className="h-1 bg-green-600 w-full"></div>
 
 					{/* Content with padding */}
 					<div className="grid grid-cols-1 md:grid-cols-2">

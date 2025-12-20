@@ -8,7 +8,7 @@ export default function Testimonials() {
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error: {error}</p>;
 	return (
-		<section className="py-16">
+		<section className="mx-auto py-8 md:py-20 bg-gray-100 ">
 			<div className="container mx-auto px-4">
 				<h2 className="text-3xl font-bold text-center mb-6">
 					What Our Parents <span className="text-green-500">Say</span>

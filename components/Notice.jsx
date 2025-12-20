@@ -141,129 +141,127 @@ export default function Notices() {
 
 	// Main Notices Page Layout (Original)
 	return (
-		<div className="bg-gradient-to-b from-green-50 to-white">
-			<div className="container max-w-7xl mx-auto px-4 py-20">
-				<div className="text-center mb-16">
-					<h1 className="text-4xl font-bold mb-4">
-						School <span className="text-green-500">Notices</span>
-					</h1>
-					<div className="w-24 h-1 bg-green-500 mx-auto mb-6 rounded-full"></div>
-					<p className="text-gray-600 max-w-2xl mx-auto text-lg">Stay updated with the latest announcements, events, and important notices for our kindergarten community.</p>
-				</div>
+		<div className="container max-w-7xl mx-auto bg-gray-100">
+			<div className="text-center mb-16">
+				<h1 className="text-4xl font-bold mb-4">
+					School <span className="text-green-500">Notices</span>
+				</h1>
+				<div className="w-24 h-1 bg-green-500 mx-auto mb-6 rounded-full"></div>
+				<p className="text-gray-600 max-w-2xl mx-auto text-lg">Stay updated with the latest announcements, events, and important notices for our kindergarten community.</p>
+			</div>
 
-				{notices && notices.length > 0 ? (
-					<div className="grid lg:grid-cols-3 gap-8">
-						{/* Latest Notice */}
-						{latestNotice && (
-							<div className="lg:col-span-2">
-								<Card className="shadow-xl border-none bg-white overflow-hidden h-full">
-									<div className="bg-gradient-to-r from-green-500 to-green-600 h-2" />
+			{notices && notices.length > 0 ? (
+				<div className="grid lg:grid-cols-3 gap-8">
+					{/* Latest Notice */}
+					{latestNotice && (
+						<div className="lg:col-span-2">
+							<Card className="shadow-xl border-none bg-white overflow-hidden h-full">
+								<div className="bg-gradient-to-r from-green-500 to-green-600 h-2" />
 
-									<div className="relative h-64 md:h-80 bg-gradient-to-br from-green-100 to-green-200">
-										{latestNotice.noticeimage ? (
-											<Image src={latestNotice.noticeimage} alt={latestNotice.noticetitle} fill className="object-cover" />
-										) : (
-											<div className="flex items-center justify-center h-full">
-												<div className="text-center">
-													<svg className="w-20 h-20 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-													</svg>
-													<p className="text-green-600 font-medium">Latest Notice</p>
-												</div>
-											</div>
-										)}
-										<div className="absolute top-4 left-4">
-											<span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">Latest</span>
-										</div>
-									</div>
-
-									<CardContent className="p-8">
-										<div className="flex items-center gap-2 mb-4">
-											<svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-											</svg>
-											<p className="text-green-600 text-sm font-medium">{formatDate(latestNotice.noticedate)}</p>
-										</div>
-
-										<h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-tight">{latestNotice.noticetitle}</h2>
-
-										<div className="prose prose-gray max-w-none">
-											<p className="text-gray-700 text-lg leading-relaxed line-clamp-3">{latestNotice.notice}</p>
-										</div>
-
-										<div className="mt-8">
-											<button onClick={() => handleReadMore(latestNotice)} className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-300 shadow-md hover:shadow-lg">
-												Read More
-											</button>
-										</div>
-									</CardContent>
-								</Card>
-							</div>
-						)}
-
-						{/* Other Notices */}
-						<div className="lg:col-span-1">
-							<div className="space-y-6">
-								<h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-									<svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-									</svg>
-									Other Notices
-								</h3>
-
-								<div className="space-y-4">
-									{otherNotices.length > 0 ? (
-										otherNotices.map((notice, index) => (
-											<Card key={notice.id || index} className="shadow-md hover:shadow-lg border-none bg-white transition-all duration-300 cursor-pointer hover:-translate-y-1" onClick={() => handleReadMore(notice)}>
-												<div className="bg-green-500 h-1" />
-												<CardContent className="p-5">
-													<div className="flex items-center gap-2 mb-3">
-														<svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-														</svg>
-														<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
-													</div>
-
-													<h4 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 leading-tight">{notice.noticetitle}</h4>
-
-													<p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{notice.notice}</p>
-
-													<div className="mt-4 pt-3 border-t border-gray-100">
-														<button
-															className="text-green-600 text-sm font-medium hover:text-green-700 inline-flex items-center transition-colors duration-200"
-															onClick={(e) => {
-																e.stopPropagation();
-																handleReadMore(notice);
-															}}
-														>
-															Read more
-															<svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-															</svg>
-														</button>
-													</div>
-												</CardContent>
-											</Card>
-										))
+								<div className="relative h-64 md:h-80 bg-gradient-to-br from-green-100 to-green-200">
+									{latestNotice.noticeimage ? (
+										<Image src={latestNotice.noticeimage} alt={latestNotice.noticetitle} fill className="object-cover" />
 									) : (
-										<div className="text-center py-8">
-											<p className="text-gray-500">No other notices available</p>
+										<div className="flex items-center justify-center h-full">
+											<div className="text-center">
+												<svg className="w-20 h-20 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+												</svg>
+												<p className="text-green-600 font-medium">Latest Notice</p>
+											</div>
 										</div>
 									)}
+									<div className="absolute top-4 left-4">
+										<span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">Latest</span>
+									</div>
 								</div>
+
+								<CardContent className="p-8">
+									<div className="flex items-center gap-2 mb-4">
+										<svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+										</svg>
+										<p className="text-green-600 text-sm font-medium">{formatDate(latestNotice.noticedate)}</p>
+									</div>
+
+									<h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-tight">{latestNotice.noticetitle}</h2>
+
+									<div className="prose prose-gray max-w-none">
+										<p className="text-gray-700 text-lg leading-relaxed line-clamp-3">{latestNotice.notice}</p>
+									</div>
+
+									<div className="mt-8">
+										<button onClick={() => handleReadMore(latestNotice)} className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-300 shadow-md hover:shadow-lg">
+											Read More
+										</button>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+					)}
+
+					{/* Other Notices */}
+					<div className="lg:col-span-1">
+						<div className="space-y-6">
+							<h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+								<svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+								</svg>
+								Other Notices
+							</h3>
+
+							<div className="space-y-4">
+								{otherNotices.length > 0 ? (
+									otherNotices.map((notice, index) => (
+										<Card key={notice.id || index} className="shadow-md hover:shadow-lg border-none bg-white transition-all duration-300 cursor-pointer hover:-translate-y-1" onClick={() => handleReadMore(notice)}>
+											<div className="bg-green-500 h-1" />
+											<CardContent className="p-5">
+												<div className="flex items-center gap-2 mb-3">
+													<svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+													</svg>
+													<p className="text-green-600 text-xs font-medium">{formatDate(notice.noticedate)}</p>
+												</div>
+
+												<h4 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 leading-tight">{notice.noticetitle}</h4>
+
+												<p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{notice.notice}</p>
+
+												<div className="mt-4 pt-3 border-t border-gray-100">
+													<button
+														className="text-green-600 text-sm font-medium hover:text-green-700 inline-flex items-center transition-colors duration-200"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleReadMore(notice);
+														}}
+													>
+														Read more
+														<svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+														</svg>
+													</button>
+												</div>
+											</CardContent>
+										</Card>
+									))
+								) : (
+									<div className="text-center py-8">
+										<p className="text-gray-500">No other notices available</p>
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
-				) : (
-					<div className="text-center py-16">
-						<svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-						</svg>
-						<h3 className="text-xl font-medium text-gray-500 mb-2">No Notices Available</h3>
-						<p className="text-gray-400">Check back later for updates and announcements.</p>
-					</div>
-				)}
-			</div>
+				</div>
+			) : (
+				<div className="text-center py-16">
+					<svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+					</svg>
+					<h3 className="text-xl font-medium text-gray-500 mb-2">No Notices Available</h3>
+					<p className="text-gray-400">Check back later for updates and announcements.</p>
+				</div>
+			)}
 		</div>
 	);
 }

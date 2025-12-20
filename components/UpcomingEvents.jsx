@@ -10,10 +10,11 @@ export default function UpcomingEvents() {
 
 	return (
 		<>
-			<section id="events" className="mx-auto py-6 md:py-20 bg-gray-100">
+			<section id="events" className="mx-auto py-8 md:py-20">
 				<div className="px-2 sm:px-4 container mx-auto">
 					<p className="text-3xl font-bold text-center mb-6">
 						<span className="text-green-500">Events</span>
+						<div className="w-24 h-1 bg-green-500 mx-auto my-6 rounded-full"></div>
 					</p>
 
 					{loading ? (

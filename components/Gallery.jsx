@@ -51,10 +51,11 @@ export default function Gallery() {
 	if (error) return <p>Error: {error}</p>;
 
 	return (
-		<section id="gallery" className="py-6 sm:py-16 bg-gray-100">
+		<section id="gallery" className="py-6 md:py-16 bg-gray-100">
 			<div className="container mx-auto px-2 sm:px-4">
 				<h2 className="text-3xl font-bold text-center mb-6 sm:mb-12">
 					Project <span className="text-green-500">Gallery</span>
+					<div className="w-24 h-1 bg-green-500 mx-auto my-6 rounded-full"></div>
 				</h2>
 
 				{/* Filter Buttons */}
