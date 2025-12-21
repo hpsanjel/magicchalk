@@ -3,7 +3,7 @@ import React, { memo, useCallback, useState } from "react";
 import { Label } from "./ui/label";
 import { Eye, EyeOff, Mail, User, UserPlus, Lock } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { Input } from "./ui/input";
 
 const InputField = memo(({ id, icon: Icon, name, value, onChange, ...props }) => (
@@ -15,21 +15,26 @@ const InputField = memo(({ id, icon: Icon, name, value, onChange, ...props }) =>
 
 InputField.displayName = "Input_Fields_User_Auth_Form";
 
-const RegisterForm = () => {
+const RegisterForm = ({ handleCloseUserModal }) => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState("");
-	const router = useRouter();
+	// const router = useRouter();
 	const [formData, setFormData] = useState({
 		fullName: "",
 		email: "",
 		userName: "",
 		password: "",
+		role: "parent",
 	});
 
 	const handleRegister = async (e) => {
 		e.preventDefault();
 		setError("");
-		console.log("Frontend bata: ", formData);
+		// Frontend validation
+		if (!formData.fullName.trim() || !formData.email.trim() || !formData.userName.trim() || !formData.password.trim() || !formData.role.trim()) {
+			setError("All fields are required.");
+			return;
+		}
 		try {
 			const response = await fetch("/api/register", {
 				method: "POST",
@@ -39,16 +44,18 @@ const RegisterForm = () => {
 				body: JSON.stringify(formData),
 			});
 			const result = await response.json();
-			console.log(result);
 			if (result.success) {
 				setFormData({
 					fullName: "",
 					email: "",
 					userName: "",
 					password: "",
+					role: "parent",
 				});
 				alert("User created successfully");
-				router.push("/dashboard/");
+				if (handleCloseUserModal) handleCloseUserModal();
+			} else if (result.error) {
+				setError(result.error);
 			}
 		} catch (error) {
 			setError(error.message);
@@ -62,10 +69,11 @@ const RegisterForm = () => {
 			email: "",
 			userName: "",
 			password: "",
+			role: "parent",
 		});
 		setError("");
-		router.push("/dashboard/");
-	}, [router]);
+		if (handleCloseUserModal) handleCloseUserModal();
+	}, [handleCloseUserModal]);
 
 	const togglePasswordVisibility = useCallback(() => {
 		setShowPassword((prev) => !prev);
@@ -74,6 +82,14 @@ const RegisterForm = () => {
 	return (
 		<form onSubmit={handleRegister}>
 			<div className="space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor="register-role">User Role</Label>
+					<select id="register-role" name="role" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring focus:ring-red-200 focus:ring-opacity-50 px-3 py-2">
+						<option value="admin">Admin</option>
+						<option value="parent">Parent</option>
+						<option value="teacher">Teacher</option>
+					</select>
+				</div>
 				<div className="space-y-2">
 					<Label htmlFor="register-name">Full Name</Label>
 					<InputField id="register-name" icon={User} name="fullName" type="text" placeholder="Enter your full name" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
@@ -86,6 +102,7 @@ const RegisterForm = () => {
 					<Label htmlFor="register-username">Username</Label>
 					<InputField id="register-username" icon={UserPlus} name="userName" type="text" placeholder="Choose a username" value={formData.userName} onChange={(e) => setFormData({ ...formData, userName: e.target.value })} />
 				</div>
+
 				<div className="space-y-2">
 					<Label htmlFor="register-password">Password</Label>
 					<div className="relative">
